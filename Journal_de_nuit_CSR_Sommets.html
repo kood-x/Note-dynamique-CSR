@@ -2785,7 +2785,12 @@ function iaGetPromptComplet() {
 
 function ouvrirModalIA() {
   masquerCle();
+  document.getElementById('promptEditeur').value = IA_CONSIGNES;
   document.getElementById('iaModal').style.display = 'flex';
+  setTimeout(function() {
+    var log = document.getElementById('agentLog');
+    if(log) log.scrollTop = log.scrollHeight;
+  }, 50);
 }
 function fermerModalIA() {
   document.getElementById('iaModal').style.display = 'none';
@@ -3112,7 +3117,6 @@ async function agentExecuter(texte) {
     agentAfficherToast('⚠ Clé API manquante — ouvre 🤖 IA');
     return;
   }
-  agentAfficherToast('🤖 ' + texte.substring(0,40) + '…');
   try {
     var response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -3130,22 +3134,15 @@ async function agentExecuter(texte) {
       })
     });
     var data = await response.json();
-    if(!response.ok) {
-      agentAfficherToast('⚠ API erreur ' + response.status + ' : ' + (data.error&&data.error.message||'inconnu'));
-      return;
-    }
+    if(!response.ok) return;
     var raw = data.content && data.content[0] ? data.content[0].text : '[]';
     var actions;
     try { actions = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
-    catch(pe) { agentAfficherToast('⚠ JSON invalide : ' + raw.substring(0,60)); return; }
+    catch(pe) { return; }
     if(Array.isArray(actions)) {
-      if(actions.length === 0) agentAfficherToast('⚠ Agent : aucune action comprise');
       actions.forEach(function(a){ agentAppliquerAction(a); });
     }
-  } catch(e) {
-    agentAfficherToast('⚠ Erreur agent : ' + (e.message||'inconnu'));
-    // erreur silencieuse
-  }
+  } catch(e) {}
 }
 
 function agentAppliquerAction(a) {
