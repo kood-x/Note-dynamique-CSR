@@ -2707,8 +2707,13 @@ function afficherStatutCle(msg, color) {
 }
 function masquerCle() {
   var el = document.getElementById('apiKeyStatus');
+  var input = document.getElementById('apiKeyInput');
   if(IA_API_KEY) {
-    if(el) { el.textContent = '✓ Clé active (' + IA_API_KEY.substring(0,12) + '...)'; el.style.color = 'var(--green)'; }
+    if(el) { el.textContent = '✓ Clé active : ' + IA_API_KEY.substring(0,16) + '...'; el.style.color = 'var(--green)'; }
+    if(input) input.placeholder = '✓ Clé sauvegardée — entrer une nouvelle pour remplacer';
+  } else {
+    if(el) { el.textContent = 'Aucune clé — entrer ta clé Anthropic ci-dessus.'; el.style.color = 'var(--muted)'; }
+    if(input) input.placeholder = 'sk-ant-api03-...';
   }
 }
 // Charger la clé depuis localStorage ou le saved-state au démarrage
