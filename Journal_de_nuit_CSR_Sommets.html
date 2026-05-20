@@ -2488,11 +2488,12 @@ function doReset(){
   renderMeds();
   initCollapseHeaders();
 
-  // 10. Remettre l'IMC à zéro
-  document.getElementById('imcDisplay').innerHTML = '<span style="color:var(--muted)">— entrer poids et taille</span>';
-
-  // 11. Remettre le calendrier à aujourd'hui
+  // 10. Remettre la date à aujourd'hui
   initCal();
+  var today = new Date();
+  var dd = ('0'+today.getDate()).slice(-2), mm = ('0'+(today.getMonth()+1)).slice(-2), yyyy = today.getFullYear();
+  document.getElementById('dateExamen').value = yyyy+'-'+mm+'-'+dd;
+  updatePreview();
 
   // 12. Retourner à l'aperçu si on était sur la note finale
   retourApercu();
@@ -2860,6 +2861,7 @@ CHAMPS DISPONIBLES ET ACTIONS :
 {"action":"setNom","valeur":"Nom Prénom"}
 {"action":"setAge","valeur":"52"}
 {"action":"setDateNaissance","valeur":"1972-03-15"}
+{"action":"setDateExamen","valeur":"2026-05-20"} // date de l'examen (format YYYY-MM-DD)
 {"action":"setSexe","valeur":"H"} ou "F"
 {"action":"setDoubleId","valeur":"oui"} ou "non"
 {"action":"setConsentement","valeur":"oui"} ou "non"
@@ -2871,6 +2873,8 @@ CHAMPS DISPONIBLES ET ACTIONS :
 
 MODULES ADDITIONNELS :
 {"action":"activerModule","module":"titration"}
+{"action":"afficherModule","module":"titration"} // expand le module et ferme les autres
+{"action":"fermerModule","module":"o2"}            // collapse un module spécifique
 {"action":"activerModule","module":"o2"}
 {"action":"activerModule","module":"zopiclone"}
 {"action":"activerModule","module":"tile-suite"}
@@ -3153,6 +3157,58 @@ function agentAppliquerAction(a) {
   var ok = false;
   var label = '';
   switch(a.action) {
+    case 'afficherModule': {
+      // Mapping nom → ID de la card
+      var modCards = {
+        '1':'card-01','identification':'card-01',
+        '2':'card-02','etude':'card-02','type':'card-02',
+        '3':'card-03','evaluation':'card-03',
+        '4':'card-04','montage':'card-04',
+        '5':'card-05','journal':'card-05',
+        '6':'card-06','fin':'card-06',
+        'titration':'section-titration','ppc':'section-titration',
+        'o2':'section-o2','oxygene':'section-o2','oxygène':'section-o2',
+        'zopiclone':'section-zopiclone',
+        'sn':'section-sn','nuit partagée':'section-sn','nuit':'section-sn',
+        'tile':'section-tile-suite','tile-suite':'section-tile-suite'
+      };
+      var cardId = modCards[(a.module||'').toLowerCase()];
+      if(cardId) {
+        // Activer le module si conditionnel et pas encore actif
+        var modMap = {'section-titration':'titration','section-o2':'o2','section-zopiclone':'zopiclone','section-sn':'sn','section-tile-suite':'tile-suite'};
+        var modKey = modMap[cardId];
+        if(modKey && !modulesActifs[modKey]) {
+          var bt = document.getElementById('mod-'+modKey); if(bt) bt.click();
+        }
+        // Fermer toutes les cards, ouvrir la demandée
+        document.querySelectorAll('.card').forEach(function(c) {
+          var btn = c.querySelector('.collapse-btn');
+          if(c.id === cardId) {
+            c.classList.remove('collapsed'); if(btn) btn.textContent = '−';
+            c.scrollIntoView({behavior:'smooth', block:'nearest'});
+          } else {
+            c.classList.add('collapsed'); if(btn) btn.textContent = '+';
+          }
+        });
+        label = 'Module affiché : ' + (a.module||''); ok = true;
+      }
+      break; }
+    case 'fermerModule': {
+      var modCards2 = {
+        '1':'card-01','2':'card-02','3':'card-03','4':'card-04','5':'card-05','6':'card-06',
+        'titration':'section-titration','o2':'section-o2','zopiclone':'section-zopiclone',
+        'sn':'section-sn','tile':'section-tile-suite','tile-suite':'section-tile-suite'
+      };
+      var cardId2 = modCards2[(a.module||'').toLowerCase()];
+      if(cardId2) {
+        var card = document.getElementById(cardId2);
+        if(card) {
+          card.classList.add('collapsed');
+          var btn = card.querySelector('.collapse-btn'); if(btn) btn.textContent = '+';
+          label = 'Module fermé : ' + (a.module||''); ok = true;
+        }
+      }
+      break; }
     case 'activerModule':
       var modId = 'mod-' + a.module;
       var btnMod = document.getElementById(modId);
@@ -3180,6 +3236,15 @@ function agentAppliquerAction(a) {
         }
       }
       break;
+    case 'setDateExamen': {
+      var el = document.getElementById('dateExamen');
+      if(el && a.valeur) {
+        el.value = a.valeur;
+        document.getElementById('calPopup') && document.getElementById('calPopup').classList.remove('open');
+        updatePreview();
+        label = 'Date examen : ' + a.valeur; ok = true;
+      }
+      break; }
     case 'setDossier':
       if(setField('dossier', a.valeur)) { label = 'Dossier : ' + a.valeur; ok = true; }
       break;
@@ -3310,7 +3375,7 @@ function agentAppliquerAction(a) {
       }
       break;
     case 'reinitialiser':
-      if(confirm('Effacer toutes les données et recommencer?')) { resetAll(); label = 'Formulaire réinitialisé'; ok = true; }
+      resetAll(); label = 'Formulaire réinitialisé'; ok = true;
       break;
     case 'setLightsOn':
       if(setField('lightsOn', a.heure)) { label = 'Lights-on ' + a.heure; ok = true; }
