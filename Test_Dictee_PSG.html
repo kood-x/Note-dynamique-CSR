@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Test Dictée PSG — CSR Sommets</title>
+<style>
+:root {
+  --navy:#1f3864;--blue:#2e75b6;--green:#2d7a4f;--orange:#c96a00;
+  --purple:#7b5ea7;--red:#b83232;--gray:#f5f7fa;--border:#dde3ec;
+  --text:#1a2333;--muted:#6b7a90;--white:#fff;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--gray); color:var(--text); min-height:100vh; }
+.topbar { background:var(--navy); color:white; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; }
+.topbar h1 { font-size:16px; font-weight:700; letter-spacing:.5px; }
+.topbar span { font-size:12px; opacity:.7; }
+.layout { display:grid; grid-template-columns:1fr 1fr; gap:20px; padding:20px; max-width:1200px; margin:0 auto; }
+.panel { background:var(--white); border-radius:10px; border:1px solid var(--border); overflow:hidden; }
+.panel-header { padding:12px 16px; font-size:13px; font-weight:700; color:white; }
+.panel-body { padding:16px; }
+.word-list { display:flex; flex-direction:column; gap:4px; max-height:75vh; overflow-y:auto; }
+.cat-label { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-top:10px; margin-bottom:4px; padding-bottom:4px; border-bottom:1px solid var(--border); }
+.word-item { display:flex; align-items:center; justify-content:space-between; padding:6px 10px; border-radius:6px; border:1px solid var(--border); background:var(--gray); cursor:pointer; transition:background .1s; }
+.word-item:hover { background:#e8f0fb; border-color:var(--blue); }
+.word-item .word { font-size:13px; font-weight:600; color:var(--navy); }
+.word-item .badge { font-size:10px; padding:2px 6px; border-radius:10px; background:#e3f2fd; color:var(--blue); }
+.word-item.custom { border-color:var(--purple); background:#f5f0fb; }
+.word-item.custom .word { color:var(--purple); }
+.right-panel { display:flex; flex-direction:column; gap:16px; }
+.mic-section { background:var(--white); border-radius:10px; border:1px solid var(--border); padding:16px; }
+.mic-section h3 { font-size:13px; font-weight:700; color:var(--navy); margin-bottom:12px; }
+#targetWord { font-size:28px; font-weight:800; color:var(--navy); text-align:center; padding:20px; background:var(--gray); border-radius:8px; margin-bottom:12px; letter-spacing:1px; min-height:80px; display:flex; align-items:center; justify-content:center; }
+.btn-mic { width:100%; padding:12px; background:var(--navy); color:white; border:none; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; transition:background .15s; }
+.btn-mic:hover { background:var(--blue); }
+.btn-mic.recording { background:var(--red); animation:pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.7} }
+.results-section { background:var(--white); border-radius:10px; border:1px solid var(--border); overflow:hidden; flex:1; }
+.results-header { padding:10px 16px; background:var(--navy); color:white; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:space-between; }
+.results-body { padding:12px; max-height:400px; overflow-y:auto; }
+.result-row { display:grid; grid-template-columns:140px 1fr auto; gap:8px; align-items:center; padding:6px 8px; border-radius:6px; border-bottom:1px solid var(--border); font-size:12px; }
+.result-row:last-child { border-bottom:none; }
+.result-row .target { font-weight:700; color:var(--navy); }
+.result-row .transcription { color:var(--text); font-family:monospace; }
+.result-row .match { font-size:11px; padding:2px 6px; border-radius:10px; }
+.match-ok { background:#e8f5e9; color:var(--green); }
+.match-bad { background:#fdeaea; color:var(--red); }
+.match-partial { background:#fff4e6; color:var(--orange); }
+.custom-section { background:var(--white); border-radius:10px; border:1px solid var(--border); padding:16px; }
+.custom-section h3 { font-size:13px; font-weight:700; color:var(--purple); margin-bottom:10px; }
+.custom-input { display:flex; gap:8px; }
+.custom-input input { flex:1; padding:8px 10px; border:1.5px solid var(--border); border-radius:6px; font-size:13px; }
+.custom-input button { padding:8px 14px; background:var(--purple); color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; }
+.custom-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.custom-tag { display:flex; align-items:center; gap:4px; padding:4px 10px; background:#f5f0fb; border:1px solid var(--purple); border-radius:20px; font-size:12px; color:var(--purple); font-weight:600; cursor:pointer; }
+.custom-tag:hover { background:#e8dcf8; }
+.export-btn { width:100%; padding:10px; background:var(--green); color:white; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; margin-top:8px; }
+.export-btn:hover { opacity:.9; }
+.instructions { font-size:12px; color:var(--muted); line-height:1.6; background:var(--gray); border-radius:6px; padding:10px; margin-bottom:12px; }
+.stat-bar { display:flex; gap:10px; padding:8px 16px; background:var(--gray); border-top:1px solid var(--border); font-size:11px; color:var(--muted); }
+.stat-bar span b { color:var(--text); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>🎤 Test Dictée PSG — CSR Sommets</h1>
+  <span>Teste la reconnaissance vocale Chrome sur le vocabulaire clinique</span>
+</div>
+
+<div class="layout">
+
+  <!-- LISTE DE MOTS -->
+  <div class="panel">
+    <div class="panel-header" style="background:var(--navy)">📋 Mots à tester — cliquer pour sélectionner</div>
+    <div class="panel-body">
+      <div class="word-list" id="wordList">
+
+        <div class="cat-label">Modes thérapeutiques</div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">CPAP</span><span class="badge">appareil</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">BiPAP</span><span class="badge">appareil</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">BiPAP-ST</span><span class="badge">appareil</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">PPC</span><span class="badge">appareil</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">APAP</span><span class="badge">appareil</span></div>
+
+        <div class="cat-label">Pressions et paramètres</div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">IPAP</span><span class="badge">pression</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">EPAP</span><span class="badge">pression</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">cmH₂O</span><span class="badge">unité</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">CPAP 8 cmH₂O</span><span class="badge">pression</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">CPAP 10 cmH₂O</span><span class="badge">pression</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">BiPAP IPAP 14 EPAP 8</span><span class="badge">pression</span></div>
+
+        <div class="cat-label">Masques</div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">AirFit N20</span><span class="badge">masque</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">AirFit F20</span><span class="badge">masque</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">AirFit P10</span><span class="badge">masque</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">AirFit N30</span><span class="badge">masque</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">masque nasal</span><span class="badge">type</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">masque facial complet</span><span class="badge">type</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">nasal pillow</span><span class="badge">type</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">mentonnière</span><span class="badge">accessoire</span></div>
+
+        <div class="cat-label">Événements respiratoires</div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">apnées obstructives</span><span class="badge">événement</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">apnées centrales</span><span class="badge">événement</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">hypopnées</span><span class="badge">événement</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">désaturation</span><span class="badge">événement</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">RERAs</span><span class="badge">événement</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">IAH</span><span class="badge">indice</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">SpO₂</span><span class="badge">saturation</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">SpO₂ 87%</span><span class="badge">valeur</span></div>
+
+        <div class="cat-label">Médicaments</div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">zopiclone</span><span class="badge">méd.</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">zopiclone 7,5 mg</span><span class="badge">méd.</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">Remeron</span><span class="badge">méd.</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">mirtazapine</span><span class="badge">méd.</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">ramipril</span><span class="badge">méd.</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">metformine</span><span class="badge">méd.</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">atorvastatine</span><span class="badge">méd.</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">salbutamol</span><span class="badge">méd.</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">lévothyroxine</span><span class="badge">méd.</span></div>
+
+        <div class="cat-label">Terminologie PSG</div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">polysomnographie</span><span class="badge">examen</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">PSG-DX</span><span class="badge">type</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">PSG-TX</span><span class="badge">type</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">nuit partagée</span><span class="badge">type</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">biocalibration</span><span class="badge">procédure</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">impédances</span><span class="badge">technique</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">Épworth</span><span class="badge">score</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">TILE</span><span class="badge">test</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">titration</span><span class="badge">procédure</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">lights-off</span><span class="badge">heure</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">lights-on</span><span class="badge">heure</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">bascule DX TX</span><span class="badge">nuit partagée</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">décubitus dorsal</span><span class="badge">position</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">décubitus latéral</span><span class="badge">position</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">canule nasale</span><span class="badge">O2</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">inhalothérapeute</span><span class="badge">titre</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">RPSGT</span><span class="badge">titre</span></div>
+
+        <div class="cat-label">Commandes agent</div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">palier maintenant</span><span class="badge">agent</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">lights off maintenant</span><span class="badge">agent</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">repositionnement latéral gauche</span><span class="badge">agent</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">réveil client aux toilettes</span><span class="badge">agent</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">initiation oxygène un litre</span><span class="badge">agent</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">éditer la note</span><span class="badge">agent</span></div>
+        <div class="word-item" onclick="selectionner(this)"><span class="word">enrichir avec l'IA</span><span class="badge">agent</span></div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- PANNEAU DROIT -->
+  <div class="right-panel">
+
+    <!-- Micro -->
+    <div class="mic-section">
+      <h3>🎙 Dictée Chrome</h3>
+      <div class="instructions">
+        1. Clique sur un mot dans la liste → il s'affiche en grand<br>
+        2. Clique <b>🎤 Dicter</b> (ou maintiens F9) → dis le mot<br>
+        3. La transcription s'enregistre automatiquement<br>
+        4. Répète 2-3 fois par mot pour plus de données
+      </div>
+      <div id="targetWord">← Sélectionner un mot</div>
+      <button class="btn-mic" id="btnMic" onclick="toggleMic()">🎤 Dicter</button>
+    </div>
+
+    <!-- Mots personnalisés -->
+    <div class="custom-section">
+      <h3>➕ Ajouter tes propres mots</h3>
+      <div class="custom-input">
+        <input type="text" id="customInput" placeholder="Ex: Dreamwear, Amara View..." autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')ajouterMot()">
+        <button onclick="ajouterMot()">Ajouter</button>
+      </div>
+      <div class="custom-tags" id="customTags"></div>
+    </div>
+
+    <!-- Résultats -->
+    <div class="results-section">
+      <div class="results-header">
+        <span>📊 Résultats de transcription</span>
+        <span id="statsLabel" style="font-size:11px;opacity:.8">0 test</span>
+      </div>
+      <div class="results-body" id="resultsBody">
+        <div style="color:var(--muted);font-size:12px;font-style:italic;text-align:center;padding:20px">
+          Les transcriptions apparaîtront ici
+        </div>
+      </div>
+      <div class="stat-bar">
+        <span>✓ Exact : <b id="statOk">0</b></span>
+        <span>~ Partiel : <b id="statPartial">0</b></span>
+        <span>✗ Différent : <b id="statBad">0</b></span>
+      </div>
+    </div>
+
+    <button class="export-btn" onclick="exporterResultats()">💾 Exporter les résultats (pour Claude)</button>
+
+  </div>
+</div>
+
+<script>
+var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+var recCourante = null;
+var motActuel = '';
+var resultats = [];
+var statsOk = 0, statsPartial = 0, statsBad = 0;
+
+// Sélectionner un mot
+function selectionner(el) {
+  document.querySelectorAll('.word-item').forEach(function(e){ e.style.outline=''; });
+  el.style.outline = '2px solid var(--blue)';
+  motActuel = el.querySelector('.word').textContent;
+  document.getElementById('targetWord').textContent = motActuel;
+}
+
+// Toggle micro
+function toggleMic() {
+  if(!SR) { alert("SpeechRecognition non supporté dans ce navigateur."); return; }
+  if(recCourante) { recCourante.stop(); return; }
+  if(!motActuel) { alert("Sélectionne un mot d'abord."); return; }
+  var btn = document.getElementById('btnMic');
+  var rec = new SR();
+  rec.lang = 'fr-CA'; rec.continuous = false; rec.interimResults = false;
+  btn.textContent = '⏹ Arrêter'; btn.classList.add('recording');
+  recCourante = rec;
+  rec.onresult = function(e) {
+    var transcription = e.results[0][0].transcript;
+    var confiance = (e.results[0][0].confidence * 100).toFixed(0);
+    enregistrerResultat(motActuel, transcription, confiance);
+  };
+  rec.onerror = function(e) {
+    btn.textContent = '🎤 Dicter'; btn.classList.remove('recording'); recCourante = null;
+  };
+  rec.onend = function() {
+    btn.textContent = '🎤 Dicter'; btn.classList.remove('recording'); recCourante = null;
+  };
+  rec.start();
+}
+
+// Enregistrer un résultat
+function enregistrerResultat(cible, transcription, confiance) {
+  var match = evalMatch(cible, transcription);
+  resultats.push({ cible:cible, transcription:transcription, confiance:confiance, match:match });
+  if(match === 'ok') statsOk++;
+  else if(match === 'partial') statsPartial++;
+  else statsBad++;
+  afficherResultats();
+  mettreAJourStats();
+}
+
+function evalMatch(cible, trans) {
+  var c = cible.toLowerCase().trim();
+  var t = trans.toLowerCase().trim();
+  if(t === c) return 'ok';
+  if(t.includes(c) || c.includes(t)) return 'partial';
+  // Vérifier mots communs
+  var motsC = c.split(/\s+/);
+  var motsT = t.split(/\s+/);
+  var communs = motsC.filter(function(m){ return motsT.includes(m); });
+  if(communs.length >= Math.ceil(motsC.length * 0.6)) return 'partial';
+  return 'bad';
+}
+
+function afficherResultats() {
+  var body = document.getElementById('resultsBody');
+  var html = '';
+  for(var i=resultats.length-1; i>=0; i--) {
+    var r = resultats[i];
+    var cls = r.match === 'ok' ? 'match-ok' : r.match === 'partial' ? 'match-partial' : 'match-bad';
+    var label = r.match === 'ok' ? '✓ exact' : r.match === 'partial' ? '~ partiel' : '✗ différent';
+    html += '<div class="result-row">'
+      + '<span class="target">' + r.cible + '</span>'
+      + '<span class="transcription">"' + r.transcription + '"</span>'
+      + '<span class="match ' + cls + '">' + label + ' (' + r.confiance + '%)</span>'
+      + '</div>';
+  }
+  body.innerHTML = html || '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">Aucun résultat</div>';
+  document.getElementById('statsLabel').textContent = resultats.length + ' test' + (resultats.length>1?'s':'');
+}
+
+function mettreAJourStats() {
+  document.getElementById('statOk').textContent = statsOk;
+  document.getElementById('statPartial').textContent = statsPartial;
+  document.getElementById('statBad').textContent = statsBad;
+}
+
+// Mots personnalisés
+var motsCustom = [];
+function ajouterMot() {
+  var val = document.getElementById('customInput').value.trim();
+  if(!val) return;
+  motsCustom.push(val);
+  document.getElementById('customInput').value = '';
+  // Ajouter à la liste
+  var list = document.getElementById('wordList');
+  var item = document.createElement('div');
+  item.className = 'word-item custom';
+  item.onclick = function(){ selectionner(this); };
+  item.innerHTML = '<span class="word">' + val + '</span><span class="badge" style="background:#ede7f6;color:var(--purple)">perso.</span>';
+  list.appendChild(item);
+  // Tag
+  var tags = document.getElementById('customTags');
+  var tag = document.createElement('div');
+  tag.className = 'custom-tag';
+  tag.textContent = val + ' ×';
+  (function(v, el){ tag.onclick = function(){ motsCustom = motsCustom.filter(function(m){return m!==v;}); el.remove(); }; })(val, tag);
+  tags.appendChild(tag);
+}
+
+// F9 hold
+document.addEventListener('keydown', function(e) {
+  if(e.keyCode === 120 && !e.repeat) { e.preventDefault(); if(!recCourante) toggleMic(); }
+});
+document.addEventListener('keyup', function(e) {
+  if(e.keyCode === 120 && recCourante) { recCourante.stop(); }
+});
+
+// Export
+function exporterResultats() {
+  if(!resultats.length) { alert("Aucun résultat à exporter."); return; }
+  var txt = "=== RÉSULTATS DICTÉE PSG — CSR Sommets ===\n";
+  txt += "Date : " + new Date().toLocaleDateString('fr-CA') + "\n";
+  txt += "Total : " + resultats.length + " tests | Exact : " + statsOk + " | Partiel : " + statsPartial + " | Différent : " + statsBad + "\n\n";
+  txt += "CIBLE                                | TRANSCRIPTION CHROME              | RÉSULTAT\n";
+  txt += "─".repeat(90) + "\n";
+  resultats.forEach(function(r) {
+    var label = r.match === 'ok' ? '✓ EXACT' : r.match === 'partial' ? '~ PARTIEL' : '✗ DIFFÉRENT';
+    txt += (r.cible + " ".repeat(Math.max(1, 37-r.cible.length))) + "| "
+         + (r.transcription + " ".repeat(Math.max(1, 34-r.transcription.length))) + "| "
+         + label + " (" + r.confiance + "%)\n";
+  });
+  // Problèmes détectés
+  var problemes = resultats.filter(function(r){ return r.match === 'bad'; });
+  if(problemes.length) {
+    txt += "\n=== TRANSCRIPTIONS PROBLÉMATIQUES ===\n";
+    problemes.forEach(function(r){
+      txt += "\"" + r.cible + "\" → Chrome dit \"" + r.transcription + "\"\n";
+    });
+  }
+  // Télécharger
+  var blob = new Blob([txt], {type:'text/plain;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'resultats_dictee_PSG_' + new Date().toISOString().slice(0,10) + '.txt';
+  a.click();
+}
+</script>
+</body>
+</html>
