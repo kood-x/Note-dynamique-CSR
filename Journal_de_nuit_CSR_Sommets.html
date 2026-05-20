@@ -2716,14 +2716,6 @@ function masquerCle() {
     if(input) input.placeholder = 'sk-ant-api03-...';
   }
 }
-// Charger la clé depuis localStorage ou le saved-state au démarrage
-(function() {
-  try {
-    var stored = localStorage.getItem('csr_api_key');
-    if(stored) { IA_API_KEY = stored; }
-  } catch(e) {}
-})();
-
 // ─── GESTION CONSIGNES ADDITIONNELLES IA ───
 
 function iaGetPromptComplet() {
@@ -2794,6 +2786,10 @@ function appliquerConsignes() {
 // INTÉGRATION IA — ANTHROPIC API
 // ============================================================
 var IA_API_KEY = ''; // Clé API — saisie via le modal Prompt de base
+// Charger depuis localStorage après déclaration
+document.addEventListener('DOMContentLoaded', function() {
+  try { var k = localStorage.getItem('csr_api_key'); if(k) IA_API_KEY = k; } catch(e) {}
+});
 var IA_MODEL   = 'claude-sonnet-4-5';
 
 var IA_PROMPT_SYSTEME = `Tu es un inhalothérapeute thérapeute respiratoire RPSGT travaillant au Laboratoire du sommeil de la Clinique de Santé Respiratoire des Sommets (CSR Sommets), à Blainville/Laurentides, Québec. Tu rédiges des notes cliniques au dossier à partir des données brutes consignées durant une étude du sommeil.
