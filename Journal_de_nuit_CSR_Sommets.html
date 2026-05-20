@@ -20,10 +20,13 @@ body.dark #memoBtn{background:#6b5c00 !important}
 body.dark #btnDarkMode{background:#6b5c00 !important}
 body.dark #btnDictee{background:#1e3a5f !important}
 body.dark #btnDictee{background:#2a4a6b !important}
-body.dark #promptModal > div, body.dark #promptBaseModal > div{background:#23262f !important;border-color:#2e3340}
-body.dark #promptModal .card-header, body.dark #promptBaseModal > div > div:first-child{background:#1a1d24 !important;border-color:#2e3340}
+body.dark #iaModal > div, body.dark #promptBaseModal > div{background:#23262f !important;border-color:#2e3340}
+body.dark #iaModal > div > div:first-child, body.dark #promptBaseModal > div > div:first-child{background:#1a1d24 !important;border-color:#2e3340}
 body.dark #promptBaseTexte{color:#dde3ec !important;background:#23262f}
-body.dark #promptModal > div > div, body.dark #promptBaseModal > div > div{border-color:#2e3340}
+body.dark #agentLog{color:#8a95a8}
+.agent-toast{position:fixed;right:80px;background:var(--navy);color:white;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:500;box-shadow:0 2px 10px rgba(0,0,0,.25);z-index:800;max-width:280px;animation:toastIn .2s ease;pointer-events:none}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+body.dark #iaModal > div > div, body.dark #promptBaseModal > div > div{border-color:#2e3340}
 
 body.dark .chron-item.editing-blue,.dark .med-item.editing-blue{background:#1e3a5f !important}
 body.dark .chron-item.editing-orange{background:#3a2200 !important}
@@ -287,8 +290,8 @@ textarea:focus::placeholder{color:transparent}
     <div class="row c3">
       <div><label>Poids (kg)</label><input type="number" autocomplete="off" id="poids" class="subtle-ph" placeholder="-" step="0.1" oninput="calcIMC()"></div>
       <div><label>Taille (cm)</label><input type="number" autocomplete="off" id="taille" class="subtle-ph" placeholder="-" step="1" oninput="calcIMC()"></div>
-      <div><label>IMC calculé</label>
-        <div id="imcDisplay" style="padding:7px 0;font-size:13px;color:var(--muted)">— entrer poids et taille</div></div>
+      <div><label>Épworth <span style="font-size:11px;color:var(--muted)">/24</span></label>
+        <input type="number" autocomplete="off" id="epworth" class="subtle-ph" placeholder="0–24" min="0" max="24" step="1" oninput="updatePreview()"></div>
     </div>
     <!-- Conditions particulières — pleine largeur -->
     <div style="margin-bottom:10px">
@@ -730,7 +733,7 @@ textarea:focus::placeholder{color:transparent}
 <div id="actionBar" style="background:var(--white);border-top:2px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-shrink:0">
   <button class="btn btn-outline" onclick="resetAll()" style="font-size:12px">🔄 Réinitialiser</button>
   <div style="display:flex;gap:8px;align-items:center">
-    <button class="btn btn-ia" onclick="ouvrirPrompt()" style="font-size:12px">⚙️ Prompt IA</button>
+    <button class="btn btn-ia" onclick="ouvrirModalIA()" style="font-size:12px">🤖 IA</button>
     <button class="btn" onclick="exporterHTML()" style="background:var(--navy);color:white;font-size:12px">💾 Exporter</button>
     <button class="btn btn-green" onclick="genererNote()" style="padding:10px 20px;font-size:14px">✓ Éditer la note</button>
   </div>
@@ -757,55 +760,70 @@ textarea:focus::placeholder{color:transparent}
   <textarea id="memoText" rows="6" placeholder="Notes personnelles — ne va pas dans la note clinique..." autocomplete="off" autocorrect="off" spellcheck="false" style="width:100%;flex:1;box-sizing:border-box;border:none;padding:10px;font-size:13px;font-family:inherit;resize:none;background:#fffde7;color:#3a3000;outline:none;min-height:80px"></textarea>
 </div>
 
-<!-- MODAL PROMPT DE BASE -->
-<div id="promptBaseModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1100;align-items:center;justify-content:center">
-  <div style="background:white;border-radius:10px;width:680px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.25)">
-    <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-      <div style="font-weight:700;font-size:14px;color:var(--navy)">📄 Prompt de base</div>
-      <button onclick="fermerPromptBase()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1">×</button>
+<!-- MODAL IA UNIFIÉ -->
+<div id="iaModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1100;align-items:center;justify-content:center">
+  <div style="background:var(--white);border-radius:12px;width:520px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
+      <div style="font-weight:700;font-size:15px;color:var(--navy)">🤖 Intelligence artificielle</div>
+      <button onclick="fermerModalIA()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1">×</button>
     </div>
-    <div style="padding:12px 20px;border-bottom:1px solid var(--border);background:var(--gray)">
-      <label style="font-size:12px;font-weight:600;color:var(--navy);display:block;margin-bottom:6px">🔑 Clé API Anthropic</label>
-      <div style="display:flex;gap:8px;align-items:center">
-        <input type="password" id="apiKeyInput" autocomplete="off" spellcheck="false" placeholder="sk-ant-api03-..." style="flex:1;font-family:monospace;font-size:12px;padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;background:white">
-        <button class="btn btn-blue btn-sm" onclick="sauvegarderApiKey()">✓ Sauvegarder</button>
-        <button class="btn btn-outline btn-sm" onclick="effacerApiKey()" title="Effacer la clé">🗑</button>
+    <div style="overflow-y:auto;flex:1">
+      <!-- Clé API -->
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border)">
+        <label style="font-size:12px;font-weight:600;color:var(--navy);display:block;margin-bottom:6px">🔑 Clé API Anthropic</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="password" id="apiKeyInput" autocomplete="off" spellcheck="false" placeholder="sk-ant-api03-..." style="flex:1;font-family:monospace;font-size:12px;padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;background:white">
+          <button class="btn btn-blue btn-sm" onclick="sauvegarderApiKey()">✓ Sauvegarder</button>
+          <button class="btn btn-outline btn-sm" onclick="effacerApiKey()" title="Effacer la clé">🗑</button>
+        </div>
+        <div id="apiKeyStatus" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
       </div>
-      <div id="apiKeyStatus" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
-    </div>
-    <div style="flex:1;overflow-y:auto;padding:16px">
-      <pre id="promptBaseTexte" style="font-family:inherit;font-size:12px;color:var(--text);white-space:pre-wrap;line-height:1.6;margin:0"></pre>
-    </div>
-    <div style="padding:10px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end">
-      <button class="btn btn-outline btn-sm" onclick="fermerPromptBase()">Fermer</button>
-    </div>
-  </div>
-</div>
-<div id="promptModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center">
-  <div style="background:white;border-radius:10px;width:680px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.25)">
-    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-weight:700;font-size:15px;color:var(--navy)">⚙️ Consignes additionnelles — IA</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">Ces consignes s'ajoutent au prompt de base et sont prioritaires en cas de contradiction</div>
+      <!-- Agent conversationnel -->
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border)">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--navy)">
+          <input type="checkbox" id="agentActif" style="width:auto;accent-color:var(--navy)" onchange="toggleAgent(this.checked)">
+          🗣 Activer l'agent conversationnel
+        </label>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;margin-left:22px">Le bouton 🎤 dicte à l'agent qui remplit les champs automatiquement.</div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <button onclick="ouvrirPromptBase()" style="background:none;border:1px solid var(--border);border-radius:5px;font-size:11px;color:var(--muted);cursor:pointer;padding:3px 8px;font-family:inherit">📄 Prompt de base</button>
-        <button onclick="fermerPrompt()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1">×</button>
+      <!-- Historique actions -->
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:8px">📋 Actions récentes</div>
+        <div id="agentLog" style="font-size:12px;color:var(--muted);font-style:italic;min-height:60px;max-height:140px;overflow-y:auto">Aucune action pour l'instant.</div>
       </div>
-    </div>
-    <div style="padding:16px;flex:1;overflow:hidden;display:flex;flex-direction:column;gap:10px">
-<textarea autocomplete="off" autocorrect="off" spellcheck="false" id="promptEditeur" placeholder="Aucune consigne additionnelle — le prompt de base s'applique intégralement." style="flex:1;min-height:250px;font-family:inherit;font-size:13px;border:1.5px solid var(--border);border-radius:6px;padding:10px;resize:none;box-sizing:border-box;line-height:1.6"></textarea>
-    </div>
-    <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-<div></div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-outline btn-sm" onclick="fermerPrompt()">Annuler</button>
-        <button class="btn btn-outline btn-sm" onclick="appliquerConsignes()">Appliquer</button>
+      <!-- Consignes additionnelles -->
+      <div style="padding:14px 20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <label style="font-size:12px;font-weight:600;color:var(--navy)">✏️ Consignes additionnelles — enrichissement de la note</label>
+          <button onclick="ouvrirPromptBase()" style="background:none;border:1px solid var(--border);border-radius:5px;font-size:11px;color:var(--muted);cursor:pointer;padding:3px 8px;font-family:inherit">📄 Voir prompt de base</button>
+        </div>
+        <textarea id="promptEditeur" rows="4" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Ex: Toujours utiliser le format 24h pour les heures..." style="width:100%;box-sizing:border-box;font-size:12px;font-family:inherit;border:1.5px solid var(--border);border-radius:6px;padding:8px;resize:vertical"></textarea>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+          <button class="btn btn-outline btn-sm" onclick="fermerModalIA()">Annuler</button>
+          <button class="btn btn-blue btn-sm" onclick="appliquerConsignes()">Appliquer</button>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
+<!-- Prompt de base (modal secondaire) -->
+<div id="promptBaseModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1200;align-items:center;justify-content:center">
+  <div style="background:var(--white);border-radius:12px;width:600px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
+      <div style="font-weight:700;font-size:14px;color:var(--navy)">📄 Prompt de base</div>
+      <button onclick="fermerPromptBase()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1">×</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:16px">
+      <pre id="promptBaseTexte" style="font-family:inherit;font-size:12px;color:var(--text);white-space:pre-wrap;line-height:1.6;margin:0"></pre>
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end">
+      <button class="btn btn-outline btn-sm" onclick="fermerPromptBase()">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PROMPT DE BASE -->
 </div><!-- /left-panel -->
 
 <div class="divider" id="appDivider"><div class="divider-handle"></div></div>
@@ -1734,6 +1752,7 @@ function buildSection_accueil() {
   if(v('pa'))       sv.push('PA ' + v('pa') + ' mmHg');
   if(v('fc'))        sv.push('FC ' + v('fc') + ' /min');
   if(v('spo2eveil')) sv.push('SpO₂ ' + v('spo2eveil') + '%');
+  if(v('epworth')) sv.push('Épworth ' + v('epworth') + '/24');
   var poids = parseFloat(v('poids')), taille = parseFloat(v('taille'));
   if(poids && taille && taille >= 100) {
     var tm = taille/100, imc = (poids/(tm*tm)).toFixed(1), f = parseFloat(imc);
@@ -1792,6 +1811,10 @@ function buildSection_appareillage() {
   if(!presD && !mt) return [];
   var L = [];
   L.push('Appareillage initial');
+  // Machine selon l'inhalothérapeute
+  var inh = v('inh') || '';
+  var machine = inh.indexOf('Renaud') >= 0 ? 'ResMed S11' : inh.indexOf('Nathalie') >= 0 ? 'ResMed S9' : '';
+  if(machine) L.push('Appareil : ' + machine + '.');
   if(presD) L.push('Pression départ : ' + presD + '.');
   if(mt) L.push('Masque : ' + mt + (mm ? ' ' + mm : '') + (mta ? ' taille ' + mta : '') + '.');
   L.push('');
@@ -1810,6 +1833,10 @@ function buildSection_nuitPartagee() {
   if(snLigne.length) L.push(snLigne.join(' — ') + '.');
   var snPresD = buildPresDepart('snModeDepart','snDepCPAP','snDepIPAP','snDepEPAP','snDepIPAPst','snDepEPAPst','snDepFR');
   var snMt = v('snMasqueType'), snMm = v('snMasqueModele'), snMta = v('snMasqueTaille');
+  // Machine selon l'inhalothérapeute
+  var inh = v('inh') || '';
+  var machine = inh.indexOf('Renaud') >= 0 ? 'ResMed S11' : inh.indexOf('Nathalie') >= 0 ? 'ResMed S9' : '';
+  if(machine) L.push('Appareil TX : ' + machine + '.');
   if(snPresD) L.push('Pression départ TX : ' + snPresD + '.');
   if(snMt) L.push('Masque départ TX : ' + snMt + (snMm ? ' ' + snMm : '') + (snMta ? ' taille ' + snMta : '') + '.');
   L.push('');
@@ -2326,7 +2353,7 @@ function exporterHTML(){
   // Synchroniser les valeurs des inputs dans le clone
   var clone = document.documentElement.cloneNode(true);
   // Forcer fermeture des modaux dans le clone
-  ['promptModal','promptBaseModal'].forEach(function(id){
+  ['iaModal','promptBaseModal'].forEach(function(id){
     var m=clone.querySelector('#'+id); if(m) m.style.display='none';
   });
   var srcInputs = document.querySelectorAll('input, textarea, select');
@@ -2491,6 +2518,8 @@ function toggleDictee() {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!SR) { alert("Dictée non supportée par ce navigateur."); return; }
   if(dicteeCourante) { dicteeCourante.stop(); return; }
+  // Mode agent
+  if(agentActifMode) { toggleDicteeAgent(); return; }
   if(!dicteeField) { return; }
   var btn = document.getElementById('btnDictee');
   var field = dicteeField;
@@ -2523,6 +2552,30 @@ function toggleDictee() {
 }
 
 
+// ─── DICTÉE AGENT ───
+function toggleDicteeAgent() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var btn = document.getElementById('btnDictee');
+  if(dicteeCourante) { dicteeCourante.stop(); return; }
+  var rec = new SR();
+  rec.lang = 'fr-CA'; rec.continuous = false; rec.interimResults = false;
+  if(btn) { btn.textContent = '⏹'; btn.style.background = 'var(--red)'; }
+  dicteeCourante = rec;
+  rec.onresult = function(e) {
+    var texte = e.results[0][0].transcript;
+    agentExecuter(texte);
+  };
+  rec.onerror = function(e) {
+    if(btn) { btn.textContent = '🎤'; btn.style.background = 'var(--purple)'; }
+    dicteeCourante = null;
+  };
+  rec.onend = function() {
+    if(btn) { btn.textContent = '🎤'; btn.style.background = agentActifMode ? 'var(--purple)' : 'var(--navy)'; }
+    dicteeCourante = null;
+  };
+  rec.start();
+}
+
 // ─── RACCOURCIS CLAVIER F1-F6 ───
 var MODULE_CARDS = ['card-01','card-02','card-03','card-04','card-05','card-06'];
 function ouvrirModuleF(num) {
@@ -2553,6 +2606,8 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault();
     ouvrirModuleF(map[e.keyCode]);
   }
+  // F9 → dictée vocale (hold : maintenir enfoncé pour dicter, relâcher pour arrêter)
+  if(e.keyCode === 120 && !e.repeat) { e.preventDefault(); toggleDictee(); }
   // F8 → fermer tous les modules
   if(e.keyCode === 119) {
     e.preventDefault();
@@ -2583,7 +2638,10 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
-// ─── MÉMO FLOTTANT ───
+document.addEventListener('keyup', function(e) {
+  // F9 relâché → arrêter la dictée
+  if(e.keyCode === 120 && dicteeCourante) { dicteeCourante.stop(); }
+});
 function toggleMemo() {
   var p = document.getElementById('memoPanel');
   if(!p) return;
@@ -2725,6 +2783,741 @@ function iaGetPromptComplet() {
   return IA_PROMPT_BASE + '\n\nCONSIGNES ADDITIONNELLES PRIORITAIRES\nCes consignes priment sur toute instruction ci-dessus en cas de contradiction :\n' + IA_CONSIGNES.trim();
 }
 
+function ouvrirModalIA() {
+  masquerCle();
+  document.getElementById('iaModal').style.display = 'flex';
+}
+function fermerModalIA() {
+  document.getElementById('iaModal').style.display = 'none';
+}
+document.addEventListener('click', function(e) {
+  if(e.target === document.getElementById('iaModal')) fermerModalIA();
+});
+// ─── AGENT CONVERSATIONNEL ───
+var agentActifMode = false;
+var agentLog = [];
+var agentToasts = [];
+
+function toggleAgent(actif) {
+  agentActifMode = actif;
+  var btn = document.getElementById('btnDictee');
+  if(btn) {
+    btn.title = actif ? "Parler à l'agent (dictée)" : "Dicter dans le champ actif";
+    btn.style.background = actif ? 'var(--purple)' : 'var(--navy)';
+  }
+}
+
+function agentAjouterLog(texte) {
+  // Ajouter au log (max 20)
+  agentLog.push(texte);
+  if(agentLog.length > 20) agentLog.shift();
+  // Mettre à jour le log dans le modal
+  var el = document.getElementById('agentLog');
+  if(el) {
+    el.innerHTML = agentLog.map(function(t){
+      return '<div style="padding:3px 0;border-bottom:1px solid var(--border);color:var(--text)">✓ ' + t + '</div>';
+    }).join('');
+    el.scrollTop = el.scrollHeight;
+  }
+  // Afficher une bulle toast
+  agentAfficherToast(texte);
+}
+
+function agentAfficherToast(texte) {
+  var toast = document.createElement('div');
+  toast.className = 'agent-toast';
+  toast.textContent = '✓ ' + texte;
+  // Calculer la position en fonction des toasts existants
+  var offset = 80;
+  agentToasts.forEach(function(t){ if(t.parentNode) offset += t.offsetHeight + 8; });
+  toast.style.bottom = offset + 'px';
+  document.body.appendChild(toast);
+  agentToasts.push(toast);
+  setTimeout(function() {
+    toast.style.transition = 'opacity .3s';
+    toast.style.opacity = '0';
+    setTimeout(function() {
+      if(toast.parentNode) toast.parentNode.removeChild(toast);
+      agentToasts = agentToasts.filter(function(t){ return t !== toast; });
+    }, 300);
+  }, 10000);
+}
+
+// ─── PROMPT SYSTÈME DE L'AGENT ───
+var AGENT_PROMPT_SYSTEME = `Tu es un assistant clinique PSG pour CSR Sommets. Tu reçois des instructions vocales en français et tu retournes UN TABLEAU JSON d'actions à exécuter sur le formulaire.
+
+CHAMPS DISPONIBLES ET ACTIONS :
+
+── MODULE 1 : IDENTIFICATION ──
+{"action":"setChambre","valeur":"Chambre 1"} ou "Chambre 2"
+{"action":"setInh","valeur":"Renaud Beausoleil"} ou "Nathalie Raymond"
+{"action":"setDossier","valeur":"12345"}
+{"action":"setNom","valeur":"Nom Prénom"}
+{"action":"setAge","valeur":"52"}
+{"action":"setDateNaissance","valeur":"1972-03-15"}
+{"action":"setSexe","valeur":"H"} ou "F"
+{"action":"setDoubleId","valeur":"oui"} ou "non"
+{"action":"setConsentement","valeur":"oui"} ou "non"
+
+── MODULE 2 : TYPE D'ÉTUDE ──
+{"action":"setEtude","valeur":"PSG-DX"} ou "PSG-TX" ou "PSG-SN"
+// PSG-TX active automatiquement le module appareillage initial
+// PSG-SN active automatiquement le module nuit partagée
+
+MODULES ADDITIONNELS :
+{"action":"activerModule","module":"titration"}
+{"action":"activerModule","module":"o2"}
+{"action":"activerModule","module":"zopiclone"}
+{"action":"activerModule","module":"tile-suite"}
+{"action":"desactiverModule","module":"titration"} // etc.
+// urgence-med : manuel seulement, ne pas activer
+
+── MODULE 3 : ÉVALUATION INITIALE ──
+{"action":"setPA","valeur":"120/80"}
+{"action":"setFC","valeur":"68"}
+{"action":"setSpo2Eveil","valeur":"95"}
+{"action":"setPoids","valeur":"85"}
+{"action":"setTaille","valeur":"175"}
+{"action":"setEpworth","valeur":"14"} // 0-24
+{"action":"setConditions","valeur":"claustrophobie légère, allergie latex"}
+{"action":"addMed","nom":"Remeron","dose":"30 mg","coucher":true}
+{"action":"editMed","nom":"Remeron","dose":"15 mg","coucher":true}
+{"action":"deleteMed","nom":"Remeron"}
+
+── MODULE 4 : MONTAGE TECHNIQUE ──
+{"action":"setBiocal","valeur":"complète"} ou "partielle — voir commentaires"
+{"action":"setImpedances","valeur":"dans les normes AASM v3 (≤ 5 kΩ)"} ou "hors norme — voir journal"
+{"action":"setMontageSpecial","valeur":"bruxisme"} ou "TCSP/RBD" ou ""
+{"action":"setQualite","valeur":"excellente"} ou "acceptable" ou "limitée — voir journal"
+{"action":"setArtefacts","valeur":"EMG tibial G intermittent, résolu à 23h02"}
+{"action":"setLightsOff","heure":"22:00"}
+// Appareillage initial PSG-TX (sec-masque) :
+{"action":"setMasque","type":"Nasal","modele":"AirFit N20","taille":"M"}
+// types: "Nasal", "Facial complet", "Nasal pillow", "Hybride" — tailles: "XS","S","S-M","M","L","XL","SW"
+{"action":"setPressionDepart","mode":"CPAP","valeur":"6"}
+{"action":"setPressionDepart","mode":"BiPAP","ipap":"12","epap":"6"}
+{"action":"setPressionDepart","mode":"BiPAP-ST","ipap":"12","epap":"6","fr":"14"}
+
+── MODULE NUIT PARTAGÉE (PSG-SN) ──
+{"action":"setHeureBascule","heure":"01:30"}
+{"action":"setCritereBascule","valeur":"IAH ≥ 20/h"} ou "IAH ≥ 15/h avec désaturations significatives" ou "critère médecin spécifié"
+{"action":"setDureeDx","valeur":"1h45"}
+// Appareillage départ TX :
+{"action":"setSnMasque","type":"Nasal","modele":"AirFit N30","taille":"M"}
+{"action":"setSnPressionDepart","mode":"CPAP","valeur":"6"}
+{"action":"setSnPressionDepart","mode":"BiPAP","ipap":"12","epap":"6"}
+{"action":"setSnPressionDepart","mode":"BiPAP-ST","ipap":"12","epap":"6","fr":"14"}
+
+── MODULE 5 : JOURNAL GÉNÉRAL ──
+{"action":"addEvent","heure":"23:15","cat":"Réveil client","desc":"aux toilettes"}
+{"action":"editEvent","heure":"23:15","cat":"Réveil client","desc":"aux toilettes, rendormi rapidement"}
+{"action":"deleteEvent","heure":"23:15"}
+// catégories: "Réveil client","Toilettes","Repositionnement","Intervention clinicien","Observation clinique","Autre"
+// Si repositionnement, inclure "position" pour mettre à jour la position active
+{"action":"setPosition","valeur":"dorsale"} ou "latéral gauche" ou "latéral droit" ou "ventrale"
+{"action":"setCommentairesEvolution","valeur":"texte"}
+
+── MODULE ZOPICLONE ──
+{"action":"setZopiHeure","heure":"22:30"}
+{"action":"setZopiDose","valeur":"7,5 mg PO"} ou "5 mg PO"
+{"action":"setZopiConduite","valeur":"transmise verbalement"} ou "non applicable"
+{"action":"setZopiEffets","valeur":"somnolence légère"}
+
+── MODULE TITRATION PPC ──
+{"action":"addPalier","heure":"23:00","mode":"CPAP","pression":"8","motif":"Apnées obstructives","position":"DOS","commentaire":""}
+{"action":"addPalier","heure":"02:00","mode":"BiPAP","ipap":"14","epap":"8","motif":"Apnées centrales","position":"","commentaire":""}
+{"action":"addPalier","heure":"03:00","mode":"BiPAP-ST","ipap":"14","epap":"8","fr":"14","motif":"Désaturation","position":"VENTRE","commentaire":""}
+{"action":"editPalier","heure":"23:00","mode":"CPAP","pression":"9","motif":"Apnées obstructives","position":"DOS","commentaire":""}
+{"action":"deletePalier","heure":"23:00"}
+// motifs: "Apnées obstructives","Hypopnées","Ronflement","RERAs","Apnées centrales","Désaturation","Pression thérapeutique atteinte","Intolérance — descente","Autre"
+// positions: "DOS","CÔTÉ G","CÔTÉ D","VENTRE" ou "" si non mentionné
+// Masque / Mentonnière :
+{"action":"addMasque","heure":"01:30","equipement":"masque","type":"Nasal","modele":"AirFit N20","taille":"M","raison":"Fuite excessive"}
+{"action":"addMasque","heure":"02:00","equipement":"mentonniere","action_ment":"Ajout","modele":"ResMed S/M","raison":"Fuites buccales"}
+{"action":"editMasque","heure":"01:30","equipement":"masque","type":"Nasal","modele":"AirFit N20","taille":"L","raison":""}
+{"action":"deleteMasque","heure":"01:30"}
+
+── MODULE OXYGÈNE D'APPOINT ──
+{"action":"addO2","heure":"02:00","evt":"Initiation","debit":"1.0","spo2":"87","mode":"canule nasale 2e voie"}
+{"action":"editO2","heure":"02:00","evt":"Ajustement débit","debit":"1.5","spo2":"92","mode":"canule nasale 2e voie"}
+{"action":"deleteO2","heure":"02:00"}
+// événements: "Initiation","Ajustement débit","Contrôle de SpO₂","Cessation"
+// débits: "0.5","1.0","1.5","2.0","2.5","3.0","3.5","4.0"
+// modes: "canule nasale 2e voie","pièce en T (circuit PPC)"
+{"action":"setPsiDebut","valeur":"1800"}
+{"action":"setPsiFin","valeur":"600"}
+
+── MODULE 6 : FIN DE NUIT ──
+{"action":"setLightsOn","heure":"06:00"}
+{"action":"setQuestNuit","valeur":"refusé par le client"} ou "complété"
+{"action":"setRegleScoring","valeur":"Règles de scoring AASM v3 appliquées (détails consignés au rapport)"} ou ""
+{"action":"setEtudeDistrib","valeur":"Étude distribuée dans G3, Dropbox et notes Juvonno"} ou ""
+{"action":"setCommentairesFin","valeur":"texte"}
+
+── MODULE TILE LENDEMAIN ──
+{"action":"setTileStageMatin","valeur":"N2"} // "Éveil spontané","N1","N2","N3","REM (à éviter — documenté)"
+{"action":"setTileTTS","valeur":"6h45 — critère ≥ 6h confirmé"}
+{"action":"setTileDernierReveil","heure":"06:45"}
+{"action":"setTilePPC","valeur":"oui — appareil et réglages habituels du client"}
+
+── NAVIGATION ET INTERFACE ──
+{"action":"editerNote"}
+{"action":"enrichirIA"}
+{"action":"retourApercu"}
+{"action":"exporter"}
+{"action":"modeSombre"}
+{"action":"modeJour"}
+{"action":"toggleMemo"}
+{"action":"ajouterMemo","texte":"rappel : vérifier masque chambre 2 à 3h"}
+{"action":"ouvrirIA"}
+{"action":"fermerIA"}
+{"action":"setConsignes","texte":"toujours utiliser le format 24h"}
+{"action":"sauvegarderConsignes"}
+{"action":"reinitialiser"} // efface tout et recommence (demander confirmation)
+
+LEXIQUE CHROME — CORRECTIONS DE TRANSCRIPTION :
+Chrome transcrit souvent mal le vocabulaire PSG en français. Voici les corrections à appliquer :
+
+APPAREILS :
+- "sipape", "SEPAQ", "si pape", "si pas", "c'est pas" → CPAP
+- "iPad", "IPA", "ip-ap" → IPAP
+- "un pape", "un pas", "e-pap", "e pas" → EPAP
+- "BiPAP est", "BiPAP St", "bipper", "despacito", "dis pas", "Esther", "Biba pesté" → BiPAP-ST
+- "à papa", "à pape", "ap-ap" → APAP
+- "BiPAP 14,8" ou "BiPAP X,Y" → BiPAP IPAP X EPAP Y (la virgule sépare IPAP et EPAP)
+- "BiPAP XY10" ou "BiPAP X610" → BiPAP IPAP premier_chiffre(s) EPAP dernier_chiffre(s)
+
+PRESSIONS — Chrome convertit les chiffres verbaux automatiquement :
+- "monte à 8 maintenant" → palier CPAP 8 cmH₂O
+- "pression départ 6" / "pression de départ 6" → setPressionDepart CPAP 6
+- "descends à 7 intolérance" → palier descente CPAP 7, motif intolérance
+
+VOCABULAIRE CLINIQUE :
+- "hip-hop", "hip hop", "hip-hop nez" → hypopnées
+- "raie", "rat", "ré" → RERAs
+- "IH", "nuage", "un nuage" → IAH
+- "PLM", "des PLM" → mouvements périodiques des membres (catégorie Observation clinique)
+- "Airport", "Lapointe", "apporte à", "importe si", "Airport size" → Épworth
+- "citation", "une citation" → titration
+- "WhatsApp", "lights out" → lights-off
+- "light song" → lights-on
+- "centimètre d'eau", "cm d'eau", "centimètre H2O" → cmH₂O (garder le chiffre)
+- "coussin nasal", "coussin pilot" → nasal pillow
+- "apnée obstructive" (singulier) → apnées obstructives
+- "apnée centrale" (singulier) → apnées centrales
+- "parasomnie observé" → parasomnies observées
+- "mouvement périodique" → mouvements périodiques des membres
+- "MSLT" → TILE
+- "Manton" → mentonnière
+- "dorsale" ou "dorsal" seul → décubitus dorsal / position DOS
+- "bio calibration" → biocalibration
+- "police sommes-nous" → polysomnographie
+
+NOMS PROPRES :
+- "Renault Beausoleil", "Renault" → Renaud Beausoleil (Chrome dit Renault pour Renaud — utiliser le nom complet)
+- "Sereno" → Renaud (contournement : dire "c'est Renaud ce soir" fonctionne bien)
+- Nathalie Raymond → bien reconnu ✓
+
+MÉDICAMENTS :
+- "réméron", "remets", "raie" → Remeron (ou mirtazapine — bien reconnu)
+- "ventolin" → salbutamol (acceptable)
+- "et si tu allais prendre", "est-ce si tu allais prendre" → escitalopram
+- "vends la fascine" → venlafaxine (parfois bien reconnu)
+- "quétiapine" → quetiapine (acceptable)
+
+SIGNES VITAUX — Chrome convertit automatiquement les chiffres verbaux :
+- "pression artérielle 120 / 80" → PA 120/80 ✓
+- "fréquence cardiaque 68" → FC 68 ✓
+- "saturation 95" ou "saturation 87" → SpO₂ directement ✓
+- "poids 85 kg" → poids 85 ✓
+- "cylindre 1800 psi" → setPsiDebut 1800 ✓
+
+MASQUES :
+- "Dreamwear", "Brevida", "Quattro FX", "Mirage Quattro", "Amara View" → bien reconnus ✓
+- "Evora" seul → F&P Evora (acceptable)
+- "taille SM", "taille small médium" → taille S-M ✓
+
+COMMANDES AGENT — bien reconnues :
+- "chambre 1 PSG thérapeutique" → setChambre Chambre 1 + setEtude PSG-TX ✓
+- "repositionnement latéral gauche maintenant" → ✓
+- "intervention clinicien maintenant" → ✓
+- "éditer la note maintenant", "exporter le fichier", "mode nuit", "retour à l'aperçu" → ✓
+Chrome transcrit souvent mal le vocabulaire PSG en français. Voici les corrections à appliquer :
+- "sipape", "SEPAQ", "si pape", "si pas", "c'est pas" → CPAP
+- "iPad", "IPA", "ip-ap" → IPAP
+- "un pape", "un pas", "e-pap", "e pas" → EPAP
+- "BiPAP est", "BiPAP St", "bipper", "despacito", "dis pas", "Esther" → BiPAP-ST
+- "à papa", "à pape", "ap-ap" → APAP
+- "hip-hop", "hip hop", "hip-hop nez" → hypopnées
+- "raie", "rat", "ré" → RERAs
+- "IH", "nuage", "un nuage" → IAH
+- "centimètre d'eau", "cm d'eau", "centimètre H2O" → cmH₂O (omettre l'unité, garder le chiffre)
+- "Airport", "Lapointe", "apps", "air" → Épworth
+- "citation", "une citation" → titration
+- "WhatsApp", "lights out" → lights-off
+- "réméron", "remets" → Remeron
+- "ventolin" → salbutamol (acceptable — c'est le nom commercial)
+- "police sommes-nous" → polysomnographie
+- "bio calibration" → biocalibration
+- "coussin nasal", "coussin pilot" → nasal pillow
+- "apnée obstructive" (singulier) → apnées obstructives (pluriel)
+- "apnée centrale" (singulier) → apnées centrales (pluriel)
+- "MSLT" → TILE (Chrome connaît mieux MSLT)
+- "Manton" → mentonnière
+- "PSG tx", "PSG thérapeutique" → PSG-TX
+- "PSG DX", "PSG diagnostic" → PSG-DX
+- "dorsale" seul → décubitus dorsal
+- "réveille client" → réveil client
+- "BiPAP hip-hop X PAP Y" → BiPAP IPAP X EPAP Y (hip-hop=IPAP, PAP=EPAP)
+- "avec un iPad à X" → IPAP X (dans contexte BiPAP)
+- "SpO2" → SpO₂ (acceptable, même valeur)
+- "saturation X%" → SpO₂ X%
+
+RÈGLES IMPORTANTES :
+- Retourner UNIQUEMENT le tableau JSON, sans texte avant ni après
+- Si une information est ambiguë, faire de ton mieux avec ce qui est disponible
+- coucher:true pour les médicaments pris au coucher
+- Pressions CPAP au format "CPAP X cmH₂O"
+- "maintenant","à l'instant","en ce moment","là","présentement" ou heure absente pour un événement ponctuel → utiliser "NOW"
+- Si aucune position n'est mentionnée pour un événement → ne pas inclure "position", la position active s'applique
+- Interpréter les noms de médicaments même mal orthographiés (remeron, zopiclone, ramipril, etc.)
+- Si tu ne comprends pas la demande, retourner []`;
+
+// ─── EXÉCUTION DES ACTIONS AGENT ───
+function agentContexte() {
+  var ctx = [];
+  if(chambreActive)  ctx.push('Chambre : ' + chambreActive);
+  if(etudeActive)    ctx.push('Étude : ' + etudeActive);
+  if(positionActive) ctx.push('Position active : ' + positionActive);
+  // Modules actifs
+  var mods = Object.keys(modulesActifs).filter(function(m){ return modulesActifs[m]; });
+  if(mods.length) ctx.push('Modules actifs : ' + mods.join(', '));
+  // Dernière pression palier
+  if(paliers.length) {
+    var last = paliers[paliers.length-1];
+    ctx.push('Dernier palier : ' + last.time + ' — ' + last.presStr);
+  }
+  // Lights off
+  var loff = document.getElementById('lightsOff');
+  if(loff && loff.value) ctx.push('Lights-off : ' + loff.value);
+  // Nombre d'événements
+  if(events.length) ctx.push('Événements au journal : ' + events.length);
+  // O2 actif
+  if(o2Events.length) ctx.push('Derniers O2 : ' + o2Events[o2Events.length-1].time + ' ' + o2Events[o2Events.length-1].debit + ' L/min');
+  return ctx.length ? '\n\nCONTEXTE ACTUEL :\n' + ctx.join('\n') : '';
+}
+
+async function agentExecuter(texte) {
+  if(!IA_API_KEY) { alert("Clé API manquante — ouvre le modal 🤖 IA."); return; }
+  try {
+    var response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': IA_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: AGENT_PROMPT_SYSTEME,
+        messages: [{ role: 'user', content: texte + agentContexte() }]
+      })
+    });
+    var data = await response.json();
+    var raw = data.content && data.content[0] ? data.content[0].text : '[]';
+    var actions = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    if(Array.isArray(actions)) {
+      actions.forEach(function(a){ agentAppliquerAction(a); });
+    }
+  } catch(e) {
+    // erreur silencieuse
+  }
+}
+
+function agentAppliquerAction(a) {
+  // Résoudre NOW en heure courante
+  var now = new Date();
+  var nowStr = ('0'+now.getHours()).slice(-2) + ':' + ('0'+now.getMinutes()).slice(-2);
+  if(a.heure === 'NOW') a.heure = nowStr;
+  var ok = false;
+  var label = '';
+  switch(a.action) {
+    case 'activerModule':
+      var modId = 'mod-' + a.module;
+      var btnMod = document.getElementById(modId);
+      if(btnMod && !modulesActifs[a.module]) { btnMod.click(); label = 'Module activé : ' + a.module; ok = true; }
+      break;
+    case 'desactiverModule':
+      var modId = 'mod-' + a.module;
+      var btnMod = document.getElementById(modId);
+      if(btnMod && modulesActifs[a.module]) { btnMod.click(); label = 'Module désactivé : ' + a.module; ok = true; }
+      break;
+    case 'setMasque':
+      setField('masqueType', a.type||''); setField('masqueModele', a.modele||''); setField('masqueTaille', a.taille||'');
+      label = 'Masque : ' + (a.type||'') + (a.modele?' '+a.modele:'') + (a.taille?' '+a.taille:''); ok = true;
+      break;
+    case 'setInh':
+      var sel = document.getElementById('inh');
+      if(sel) {
+        // Corriger Renault → Renaud (Chrome transcrit Renaud en Renault)
+        var inhVal = (a.valeur||'').replace(/renault/gi, 'renaud');
+        for(var i=0;i<sel.options.length;i++) {
+          if(sel.options[i].value.toLowerCase().indexOf(inhVal.toLowerCase()) >= 0) {
+            sel.selectedIndex = i; sel.dispatchEvent(new Event('change'));
+            label = 'Inhalothérapeute : ' + sel.options[i].value.split(',')[0]; ok = true; break;
+          }
+        }
+      }
+      break;
+    case 'setDossier':
+      if(setField('dossier', a.valeur)) { label = 'Dossier : ' + a.valeur; ok = true; }
+      break;
+    case 'setDoubleId':
+      if(setField('doubleId', a.valeur)) { label = 'Double identification : ' + a.valeur; ok = true; }
+      break;
+    case 'setConsentement':
+      if(setField('consentement', a.valeur)) { label = 'Consentement : ' + a.valeur; ok = true; }
+      break;
+    case 'setChambre':
+      var el = a.valeur === 'Chambre 1' ? document.getElementById('ch1') : document.getElementById('ch2');
+      if(el) { el.click(); label = a.valeur; ok = true; }
+      break;
+    case 'setNom':
+      if(setField('nomPatient', a.valeur)) { label = 'Patient : ' + a.valeur; ok = true; }
+      break;
+    case 'setAge':
+      if(setField('age', a.valeur)) { label = 'Âge : ' + a.valeur + ' ans'; ok = true; }
+      break;
+    case 'setSexe':
+      if(setField('sexe', a.valeur)) { label = 'Sexe : ' + a.valeur; ok = true; }
+      break;
+    case 'setPoids':
+      if(setField('poids', a.valeur)) { label = 'Poids : ' + a.valeur + ' kg'; ok = true; }
+      break;
+    case 'setPA':
+      if(setField('pa', a.valeur)) { label = 'PA : ' + a.valeur + ' mmHg'; ok = true; }
+      break;
+    case 'setFC':
+      if(setField('fc', a.valeur)) { label = 'FC : ' + a.valeur + ' /min'; ok = true; }
+      break;
+    case 'setSpo2Eveil':
+      if(setField('spo2eveil', a.valeur)) { label = 'SpO₂ éveil : ' + a.valeur + '%'; ok = true; }
+      break;
+    case 'setEpworth':
+      if(setField('epworth', a.valeur)) { label = 'Épworth : ' + a.valeur + '/24'; ok = true; }
+      break;
+    case 'setTaille':
+      if(setField('taille', a.valeur)) { label = 'Taille : ' + a.valeur + ' cm'; ok = true; }
+      break;
+    case 'setEtude':
+      var btnEtude = document.getElementById('etude-' + a.valeur);
+      if(btnEtude) { btnEtude.click(); label = a.valeur; ok = true; }
+      break;
+    case 'setConditions':
+      if(setField('conditions', a.valeur)) { label = 'Conditions : ' + a.valeur.substring(0,40); ok = true; }
+      break;
+    case 'addMed':
+      setField('medNom', a.nom); setField('medDose', a.dose || '');
+      var cb = document.getElementById('medCoucher'); if(cb) cb.checked = !!a.coucher;
+      addMed(); label = a.nom + (a.dose?' '+a.dose:'') + (a.coucher?' (coucher)':''); ok = true;
+      break;
+    case 'setZopiclone':
+    case 'setZopiHeure':
+      if(a.heure) { if(!modulesActifs['zopiclone']){var bz=document.getElementById('mod-zopiclone');if(bz)bz.click();} setField('zopiHeure', a.heure); label = 'Zopiclone heure : ' + a.heure; ok = true; }
+      if(a.dose) setField('zopiDose', a.dose);
+      if(a.action !== 'setZopiHeure') { label = 'Zopiclone ' + (a.dose||'') + (a.heure?' à '+a.heure:''); ok = true; }
+      break;
+    case 'setZopiDose':
+      if(!modulesActifs['zopiclone']){var bz=document.getElementById('mod-zopiclone');if(bz)bz.click();}
+      if(setField('zopiDose', a.valeur)) { label = 'Zopiclone dose : ' + a.valeur; ok = true; }
+      break;
+    case 'setZopiConduite':
+      if(setField('zopiConduite', a.valeur)) { label = 'Conduite : ' + a.valeur; ok = true; }
+      break;
+    case 'setZopiEffets':
+      if(setField('zopiEffets', a.valeur)) { label = 'Effets zopiclone : ' + a.valeur.substring(0,40); ok = true; }
+      break;
+    case 'setBiocal':
+      if(setField('biocal', a.valeur)) { label = 'Biocal : ' + a.valeur; ok = true; }
+      break;
+    case 'setImpedances':
+      if(setField('impedances', a.valeur)) { label = 'Impédances : ' + (a.valeur.indexOf('normes')>=0?'OK':'hors norme'); ok = true; }
+      break;
+    case 'setMontageSpecial':
+      if(setField('montageSpecial', a.valeur)) { label = 'Montage spécial : ' + (a.valeur||'aucun'); ok = true; }
+      break;
+    case 'setQualite':
+      if(setField('qualite', a.valeur)) { label = 'Qualité : ' + a.valeur; ok = true; }
+      break;
+    case 'setArtefacts':
+      if(setField('artefacts', a.valeur)) { label = 'Artefacts : ' + a.valeur.substring(0,40); ok = true; }
+      break;
+    case 'setPressionDepart':
+      if(a.mode === 'BiPAP') {
+        setField('titrationMode','BiPAP'); document.getElementById('titrationMode').dispatchEvent(new Event('change'));
+        setField('depIPAP', a.ipap||''); setField('depEPAP', a.epap||'');
+        label = 'Appareillage BiPAP IPAP '+a.ipap+'/EPAP '+a.epap; ok = true;
+      } else if(a.mode === 'BiPAP-ST') {
+        setField('titrationMode','BiPAP-ST'); document.getElementById('titrationMode').dispatchEvent(new Event('change'));
+        setField('depIPAPst', a.ipap||''); setField('depEPAPst', a.epap||''); setField('depFR', a.fr||'');
+        label = 'Appareillage BiPAP-ST'; ok = true;
+      } else {
+        setField('titrationMode','CPAP'); document.getElementById('titrationMode').dispatchEvent(new Event('change'));
+        setField('depCPAP', a.valeur||'');
+        label = 'Pression départ CPAP '+a.valeur+' cmH₂O'; ok = true;
+      }
+      break;
+    case 'setLightsOff':
+      if(setField('lightsOff', a.heure)) { label = 'Lights-off ' + a.heure; ok = true; }
+      break;
+    case 'setHeureBascule':
+      if(setField('heureBascule', a.heure)) { label = 'Bascule DX→TX : ' + a.heure; ok = true; }
+      break;
+    case 'setCritereBascule':
+      if(setField('critereBascule', a.valeur)) { label = 'Critère : ' + a.valeur; ok = true; }
+      break;
+    case 'setDureeDx':
+      if(setField('dureeDx', a.valeur)) { label = 'Durée DX : ' + a.valeur; ok = true; }
+      break;
+    case 'setSnMasque':
+      setField('snMasqueType', a.type||''); setField('snMasqueModele', a.modele||''); setField('snMasqueTaille', a.taille||'');
+      label = 'Masque TX : ' + (a.type||'') + (a.modele?' '+a.modele:'') + (a.taille?' '+a.taille:''); ok = true;
+      break;
+    case 'setSnPressionDepart':
+      if(a.mode === 'BiPAP') {
+        setField('snModeDepart','BiPAP'); document.getElementById('snModeDepart').dispatchEvent(new Event('change'));
+        setField('snDepIPAP', a.ipap||''); setField('snDepEPAP', a.epap||'');
+        label = 'SN départ BiPAP '+a.ipap+'/'+a.epap; ok = true;
+      } else if(a.mode === 'BiPAP-ST') {
+        setField('snModeDepart','BiPAP-ST'); document.getElementById('snModeDepart').dispatchEvent(new Event('change'));
+        setField('snDepIPAPst', a.ipap||''); setField('snDepEPAPst', a.epap||''); setField('snDepFR', a.fr||'');
+        label = 'SN départ BiPAP-ST'; ok = true;
+      } else {
+        setField('snModeDepart','CPAP'); document.getElementById('snModeDepart').dispatchEvent(new Event('change'));
+        setField('snDepCPAP', a.valeur||'');
+        label = 'SN départ CPAP '+a.valeur+' cmH₂O'; ok = true;
+      }
+      break;
+    case 'reinitialiser':
+      if(confirm('Effacer toutes les données et recommencer?')) { resetAll(); label = 'Formulaire réinitialisé'; ok = true; }
+      break;
+    case 'setLightsOn':
+      if(setField('lightsOn', a.heure)) { label = 'Lights-on ' + a.heure; ok = true; }
+      break;
+    case 'setCommentairesEvolution':
+      if(setField('commentairesEvolution', a.valeur)) { label = 'Commentaires évolution'; ok = true; }
+      break;
+    case 'setQuestNuit':
+      if(setField('questNuit', a.valeur)) { label = 'Questionnaire nuit : ' + a.valeur; ok = true; }
+      break;
+    case 'setRegleScoring':
+      if(setField('regleScoring', a.valeur)) { label = 'Règles scoring : ' + (a.valeur ? 'AASM v3' : 'non applicable'); ok = true; }
+      break;
+    case 'setEtudeDistrib':
+      if(setField('etudeDistrib', a.valeur)) { label = 'Étude distribuée : ' + (a.valeur ? 'oui' : 'non'); ok = true; }
+      break;
+    case 'setCommentairesFin':
+      if(setField('commentairesFin', a.valeur)) { label = 'Commentaires révision'; ok = true; }
+      break;
+    case 'editerNote':
+      genererNote(); label = 'Vue : Éditer la note'; ok = true;
+      break;
+    case 'enrichirIA':
+      genererNote();
+      setTimeout(function(){ iaGenererNote(); }, 500);
+      label = 'IA : enrichissement lancé'; ok = true;
+      break;
+    case 'retourApercu':
+      retourApercu(); label = 'Vue : Aperçu'; ok = true;
+      break;
+    case 'exporter':
+      exporterHTML(); label = 'Fichier exporté'; ok = true;
+      break;
+    case 'modeSombre':
+      if(!document.body.classList.contains('dark')) toggleDarkMode();
+      label = 'Mode nuit activé'; ok = true;
+      break;
+    case 'modeJour':
+      if(document.body.classList.contains('dark')) toggleDarkMode();
+      label = 'Mode jour activé'; ok = true;
+      break;
+    case 'toggleMemo':
+      toggleMemo();
+      label = 'Mémo ' + (document.getElementById('memoPanel').style.display==='flex'?'fermé':'ouvert'); ok = true;
+      break;
+    case 'ouvrirIA':
+      ouvrirModalIA(); label = 'Boîte IA ouverte'; ok = true;
+      break;
+    case 'fermerIA':
+      fermerModalIA(); label = 'Boîte IA fermée'; ok = true;
+      break;
+    case 'setConsignes': {
+      var pe = document.getElementById('promptEditeur');
+      if(pe) {
+        ouvrirModalIA();
+        pe.value = a.texte||'';
+        appliquerConsignes();
+        label = 'Consignes appliquées'; ok = true;
+      }
+      break; }
+    case 'sauvegarderConsignes':
+      appliquerConsignes(); label = 'Consignes sauvegardées'; ok = true;
+      break;
+    case 'ajouterMemo': {
+      var memo = document.getElementById('memoText');
+      if(memo) {
+        memo.value = (memo.value ? memo.value + '\n' : '') + (a.texte||'');
+        label = 'Mémo : ' + (a.texte||'').substring(0,40); ok = true;
+      }
+      break; }
+    case 'setTileStageMatin':
+      if(!modulesActifs['tile-suite']){var bt=document.getElementById('mod-tile-suite');if(bt)bt.click();}
+      if(setField('tileStageMatin', a.valeur)) { label = 'TILE stade matin : ' + a.valeur; ok = true; }
+      break;
+    case 'setTileTTS':
+      if(setField('tileTTS', a.valeur)) { label = 'TILE TTS : ' + a.valeur; ok = true; }
+      break;
+    case 'setTileDernierReveil':
+      if(setField('tileDernierReveil', a.heure)) { label = 'TILE dernier réveil : ' + a.heure; ok = true; }
+      break;
+    case 'setTilePPC':
+      if(setField('tilePPC', a.valeur)) { label = 'TILE PPC : ' + (a.valeur.indexOf('oui')>=0?'oui':a.valeur.indexOf('non applicable')>=0?'non applicable':'non'); ok = true; }
+      break;
+    case 'editPalier': {
+      var idx = paliers.findIndex(function(p){ return p.time === a.heure; });
+      if(idx >= 0) {
+        var p = paliers[idx];
+        var presStr = '';
+        if(a.mode === 'BiPAP') presStr = 'BiPAP IPAP ' + a.ipap + ' / EPAP ' + a.epap + ' cmH₂O';
+        else if(a.mode === 'BiPAP-ST') presStr = 'BiPAP-ST IPAP ' + a.ipap + ' / EPAP ' + a.epap + ' cmH₂O' + (a.fr?' FR '+a.fr+'/min':'');
+        else presStr = 'CPAP ' + (a.pression||a.cpap||p.presStr.replace(/\D/g,'')) + ' cmH₂O';
+        paliers[idx] = {id:p.id, time:p.time, presStr:presStr, motif:a.motif||p.motif, pos:a.position||p.pos, comment:a.commentaire||p.comment};
+        renderPaliers(); label = 'Palier ' + a.heure + ' modifié → ' + presStr; ok = true;
+      }
+      break; }
+    case 'deletePalier': {
+      var before = paliers.length;
+      paliers = paliers.filter(function(p){ return p.time !== a.heure; });
+      if(paliers.length < before) { renderPaliers(); label = 'Palier ' + a.heure + ' supprimé'; ok = true; }
+      break; }
+    case 'editMasque': {
+      var idx = masqueChanges.findIndex(function(m){ return m.time === a.heure; });
+      if(idx >= 0) {
+        var m = masqueChanges[idx];
+        var descM = a.equipement === 'mentonniere'
+          ? (a.action_ment||'Ajout') + ' mentonnière' + (a.modele?' '+a.modele:'')
+          : (a.type||'Masque') + (a.modele?' '+a.modele:'') + (a.taille?' taille '+a.taille:'');
+        masqueChanges[idx] = {id:m.id, time:m.time, desc:descM, raison:a.raison||m.raison};
+        renderMasques(); label = 'Masque ' + a.heure + ' modifié'; ok = true;
+      }
+      break; }
+    case 'deleteMasque': {
+      var before = masqueChanges.length;
+      masqueChanges = masqueChanges.filter(function(m){ return m.time !== a.heure; });
+      if(masqueChanges.length < before) { renderMasques(); label = 'Masque ' + a.heure + ' supprimé'; ok = true; }
+      break; }
+    case 'editEvent': {
+      var idx = events.findIndex(function(e){ return e.time === a.heure; });
+      if(idx >= 0) {
+        events[idx] = {id:events[idx].id, time:events[idx].time, cat:a.cat||events[idx].cat, desc:a.desc||events[idx].desc};
+        renderEvents(); label = 'Événement ' + a.heure + ' modifié'; ok = true;
+      }
+      break; }
+    case 'deleteEvent': {
+      var before = events.length;
+      events = events.filter(function(e){ return e.time !== a.heure; });
+      if(events.length < before) { renderEvents(); label = 'Événement ' + a.heure + ' supprimé'; ok = true; }
+      break; }
+    case 'editO2': {
+      var idx = o2Events.findIndex(function(o){ return o.time === a.heure; });
+      if(idx >= 0) {
+        var o = o2Events[idx];
+        o2Events[idx] = {id:o.id, time:o.time, evt:a.evt||o.evt, debit:a.debit||o.debit, spo2:a.spo2||o.spo2, mode:a.mode||o.mode};
+        renderO2(); label = 'O₂ ' + a.heure + ' modifié'; ok = true;
+      }
+      break; }
+    case 'setPsiDebut':
+      if(setField('o2PsiDebut', a.valeur)) { label = 'Cylindre initial : ' + a.valeur + ' psi'; ok = true; }
+      break;
+    case 'setPsiFin':
+      if(setField('o2PsiFin', a.valeur)) { label = 'Cylindre final : ' + a.valeur + ' psi'; ok = true; }
+      break;
+    case 'deleteO2': {
+      var before = o2Events.length;
+      o2Events = o2Events.filter(function(o){ return o.time !== a.heure; });
+      if(o2Events.length < before) { renderO2(); label = 'O₂ ' + a.heure + ' supprimé'; ok = true; }
+      break; }
+    case 'editMed': {
+      var idx = meds.findIndex(function(m){ return m.nom.toLowerCase() === (a.nom||'').toLowerCase(); });
+      if(idx >= 0) {
+        meds[idx] = {id:meds[idx].id, nom:a.nom||meds[idx].nom, dose:a.dose||meds[idx].dose, coucher:a.coucher!==undefined?a.coucher:meds[idx].coucher};
+        renderMeds(); label = a.nom + ' modifié'; ok = true;
+      }
+      break; }
+    case 'deleteMedNom':
+    case 'deleteMed': {
+      var before = meds.length;
+      meds = meds.filter(function(m){ return m.nom.toLowerCase() !== (a.nom||'').toLowerCase(); });
+      if(meds.length < before) { renderMeds(); label = (a.nom||'Med') + ' supprimé'; ok = true; }
+      break; }
+    case 'setPosition':
+      var posMap2 = {'dorsal':'dorsal','dos':'dorsal','dorsale':'dorsal',
+                     'lateral droit':'latD','latéral droit':'latD','côté droit':'latD','côté d':'latD',
+                     'lateral gauche':'latG','latéral gauche':'latG','côté gauche':'latG','côté g':'latG',
+                     'ventral':'ventral','ventrale':'ventral','ventre':'ventral'};
+      var posKey = posMap2[(a.valeur||'').toLowerCase()];
+      if(posKey) {
+        var btnPos = document.getElementById({dorsal:'qDorsal',latD:'qLatD',latG:'qLatG',ventral:'qVentral'}[posKey]);
+        if(btnPos) { btnPos.click(); label = 'Position : ' + a.valeur; ok = true; }
+      }
+      break;
+    case 'addEvent':
+      events.push({id:Date.now(), time:a.heure, cat:a.cat||'Autre', desc:a.desc||''});
+      renderEvents(); label = a.heure + ' — ' + (a.cat||'') + (a.desc?' '+a.desc:''); ok = true;
+      // Position : si mentionnée → mettre à jour ; sinon → position active actuelle s'applique déjà
+      if(a.position) agentAppliquerAction({action:'setPosition', valeur:a.position});
+      break;
+    case 'addPalier':
+      if(!modulesActifs['titration']) { var bt=document.getElementById('mod-titration'); if(bt) bt.click(); }
+      // Construire la chaîne de pression selon le mode
+      var presStr = '';
+      if(a.mode === 'BiPAP') presStr = 'BiPAP IPAP ' + a.ipap + ' / EPAP ' + a.epap + ' cmH₂O';
+      else if(a.mode === 'BiPAP-ST') presStr = 'BiPAP-ST IPAP ' + a.ipap + ' / EPAP ' + a.epap + ' cmH₂O' + (a.fr?' FR '+a.fr+'/min':'');
+      else presStr = 'CPAP ' + (a.pression||a.cpap||'') + ' cmH₂O';
+      paliers.push({id:Date.now(), time:a.heure, presStr:presStr, motif:a.motif||'', pos:a.position||'', comment:a.commentaire||''});
+      renderPaliers(); label = a.heure + ' — ' + presStr; ok = true;
+      break;
+    case 'addMasque':
+      if(!modulesActifs['titration']) { var bt=document.getElementById('mod-titration'); if(bt) bt.click(); }
+      var descMasque = '';
+      if(a.equipement === 'mentonniere') {
+        descMasque = (a.action_ment||'Ajout') + ' mentonnière' + (a.modele?' '+a.modele:'');
+      } else {
+        descMasque = (a.type||'Masque') + (a.modele?' '+a.modele:'') + (a.taille?' taille '+a.taille:'');
+      }
+      masqueChanges.push({id:Date.now(), time:a.heure, desc:descMasque, raison:a.raison||''});
+      renderMasques(); label = a.heure + ' — ' + descMasque; ok = true;
+      break;
+    case 'addO2':
+      if(!modulesActifs['o2']) { var bt=document.getElementById('mod-o2'); if(bt) bt.click(); }
+      o2Events.push({id:Date.now(), time:a.heure, evt:a.evt||'', debit:a.debit||'', spo2:a.spo2||'', mode:a.mode||''});
+      renderO2(); label = a.heure + ' — O₂ ' + (a.debit||'') + ' L/min'; ok = true;
+      break;
+  }
+  if(ok) { agentAjouterLog(label); updatePreview(); }
+}
+
+function setField(id, val) {
+  var el = document.getElementById(id);
+  if(!el) return false;
+  el.value = val;
+  el.dispatchEvent(new Event('input'));
+  el.dispatchEvent(new Event('change'));
+  return true;
+}
+
 function ouvrirPromptBase() {
   masquerCle();
   var txt = document.getElementById('promptBaseTexte');
@@ -2738,11 +3531,12 @@ document.addEventListener('click', function(e) {
   if(e.target === document.getElementById('promptBaseModal')) fermerPromptBase();
 });
 function ouvrirPrompt() {
+  ouvrirModalIA();
   document.getElementById('promptEditeur').value = IA_CONSIGNES;
-  document.getElementById('promptModal').style.display = 'flex';
 }
+
 function fermerPrompt() {
-  document.getElementById('promptModal').style.display = 'none';
+  fermerModalIA();
 }
 function appliquerConsignes() {
   IA_CONSIGNES = document.getElementById('promptEditeur').value.trim();
