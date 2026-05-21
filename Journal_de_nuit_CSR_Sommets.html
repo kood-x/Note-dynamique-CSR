@@ -157,7 +157,7 @@ input:focus::placeholder{color:transparent}
 textarea:focus::placeholder{color:transparent}
 
 /* ─── LISTE MÉDICAMENTS ─── */
-.med-item{display:grid;grid-template-columns:1fr auto 20px;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--white);font-size:13px}
+.med-item{display:grid;grid-template-columns:auto 1fr 20px;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--white);font-size:12px}
 .med-coucher{font-size:10px;padding:2px 7px;border-radius:10px;background:#e8f0fb;color:var(--navy);font-weight:600;white-space:nowrap}
 .med-del{color:var(--red);cursor:pointer;font-size:16px;background:none;border:none;padding:0;line-height:1}
 
@@ -301,7 +301,7 @@ textarea:focus::placeholder{color:transparent}
     <!-- Médication : liste en demi-largeur + formulaire en pleine largeur -->
     <div>
       <label style="font-weight:600;color:var(--navy);margin-bottom:6px;display:block">Médication documentée</label>
-      <div id="medList" style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px">
+      <div id="medList" style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">
         <div style="color:var(--muted);font-size:12px;font-style:italic;grid-column:1/-1">Aucun médicament — utilisez le formulaire ci-dessous</div>
       </div>
       <div style="background:var(--gray);border:1px solid var(--border);border-radius:6px;padding:10px">
@@ -694,7 +694,7 @@ textarea:focus::placeholder{color:transparent}
     <div class="row c2" style="margin-bottom:10px">
       <div><label>Lights-on <span class="req">*</span></label><input type="time" id="lightsOn" oninput="updatePreview()"></div>
       <div><label>Questionnaire nuit (client)</label>
-        <select id="questNuit"><option value="complété">✓ Complété</option><option value="refusé par le client">Refusé par le client</option></select></div>
+        <select id="questNuit"><option value="complété">✓ Complété</option><option value="refusé par le client">Refusé par le client</option><option value="non-rempli">Non-rempli</option></select></div>
     </div>
     <div style="margin-bottom:10px"><label>Commentaires de révision / impressions / suggestions <span style="font-size:9px;font-weight:600;color:#2e75b6;background:#e3f2fd;border-radius:3px;padding:1px 5px;margin-left:6px;letter-spacing:0.3px;vertical-align:middle">dictée</span></label>
       <textarea autocomplete="off" autocorrect="off" spellcheck="false" id="commentairesFin" rows="4" style="resize:vertical" placeholder="Ex: longue latence à l'endormissement, cycles culminant en REM, SWS en début de nuit, ronflement résiduel en décubitus dorsal, qualité de sommeil subjective médiocre selon questionnaire"></textarea></div>
@@ -936,19 +936,229 @@ function cancelEditMed() {
   renderMeds();
 }
 function deleteMed(id) { meds=meds.filter(function(m){return m.id!==id;}); renderMeds(); updatePreview(); }
+
+// ─── BASE MÉDICAMENTS / EFFETS PSG ───
+var MED_PSG = {
+  // ISRS
+  'fluoxetine':    ['●●● ↓ REM','●●● ↑ Lat.REM','●● ↑ WASO','●● Masquage TCSP'],
+  'sertraline':    ['●●● ↓ REM','●●● ↑ Lat.REM','●● ↑ WASO','●● Masquage TCSP'],
+  'escitalopram':  ['●●● ↓ REM','●●● ↑ Lat.REM','●● ↑ WASO','●● Masquage TCSP'],
+  'citalopram':    ['●●● ↓ REM','●●● ↑ Lat.REM','●● ↑ WASO'],
+  'paroxetine':    ['●●● ↓ REM','●●● ↑ Lat.REM','●● ↑ WASO'],
+  // IRSN
+  'venlafaxine':   ['●●● ↓ REM','●●● ↑ Lat.REM','●● ↑ WASO','●● Masquage TCSP'],
+  'effexor':       ['●●● ↓ REM','●●● ↑ Lat.REM','●● ↑ WASO','●● Masquage TCSP'],
+  'duloxetine':    ['●●● ↓ REM','●●● ↑ Lat.REM','●● ↑ WASO'],
+  'cymbalta':      ['●●● ↓ REM','●●● ↑ Lat.REM','●● ↑ WASO'],
+  // Autres AD
+  'mirtazapine':   ['●● ↑ N3','●● ↑ Apn.obstr.'],
+  'remeron':       ['●● ↑ N3','●● ↑ Apn.obstr.'],
+  'trazodone':     ['● ↑ N3'],
+  'desyrel':       ['● ↑ N3'],
+  'bupropion':     ['●● ↑ Lat.S.','●● ↑ WASO','●● Alpha NREM'],
+  'wellbutrin':    ['●● ↑ Lat.S.','●● ↑ WASO','●● Alpha NREM'],
+  'zyban':         ['●● ↑ Lat.S.','●● ↑ WASO'],
+  'amitriptyline': ['●● ↓ REM','●● ↑ Lat.REM','●● ↑ N3'],
+  'elavil':        ['●● ↓ REM','●● ↑ Lat.REM','●● ↑ N3'],
+  'nortriptyline': ['●● ↓ REM','●● ↑ N3'],
+  // Antipsychotiques
+  'quetiapine':    ['●● ↑ N3','●● ↑ Apn.obstr.','● ↑ MPM'],
+  'seroquel':      ['●● ↑ N3','●● ↑ Apn.obstr.'],
+  'olanzapine':    ['●● ↑ N3','●● ↑ Apn.obstr.'],
+  'risperidone':   ['●● ↑ N3','●● ↑ Apn.obstr.','● ↑ MPM'],
+  'risperdal':     ['●● ↑ N3','●● ↑ Apn.obstr.'],
+  'haloperidol':   ['●● ↑ MPM','●● ↑ WASO'],
+  'haldol':        ['●● ↑ MPM','●● ↑ WASO'],
+  // BZD
+  'clonazepam':    ['●● ↓ REM','●●● ↓ N3','●●● ↑ Fuseaux N2','●●● ↑ Apn.obstr.','●●● Bêta EEG'],
+  'rivotril':      ['●● ↓ REM','●●● ↓ N3','●●● ↑ Fuseaux N2','●●● ↑ Apn.obstr.'],
+  'lorazepam':     ['●● ↓ REM','●●● ↓ N3','●●● ↑ Fuseaux N2','●●● ↑ Apn.obstr.'],
+  'ativan':        ['●● ↓ REM','●●● ↓ N3','●●● ↑ Fuseaux N2','●●● ↑ Apn.obstr.'],
+  'diazepam':      ['●● ↓ REM','●●● ↓ N3','●●● ↑ Fuseaux N2','●●● ↑ Apn.obstr.'],
+  'valium':        ['●● ↓ REM','●●● ↓ N3','●●● ↑ Fuseaux N2'],
+  'temazepam':     ['●● ↓ REM','●●● ↓ N3','●●● ↑ Fuseaux N2','●●● ↑ Apn.obstr.'],
+  'alprazolam':    ['●● ↓ REM','●●● ↓ N3','●●● ↑ Fuseaux N2','●●● ↑ Apn.obstr.'],
+  'xanax':         ['●● ↓ REM','●●● ↓ N3','●●● ↑ Fuseaux N2'],
+  // Z-drugs
+  'zopiclone':     ['● ↓ N3','● ↑ Fuseaux N2'],
+  'imovane':       ['● ↓ N3','● ↑ Fuseaux N2'],
+  'zolpidem':      ['● ↓ N3','● ↑ Fuseaux N2'],
+  'stilnox':       ['● ↓ N3','● ↑ Fuseaux N2'],
+  // Mélatonine
+  'melatonine':    ['● Minimal'],
+  'circadin':      ['● Minimal'],
+  // Opioïdes
+  'morphine':      ['!!! ↓ REM','●●● ↓ N3','!!! ↑ Apn.cent.','!!! Pattern Biot'],
+  'oxycodone':     ['!!! ↓ REM','●●● ↓ N3','!!! ↑ Apn.cent.','●● ↑ WASO'],
+  'oxycontin':     ['!!! ↓ REM','●●● ↓ N3','!!! ↑ Apn.cent.'],
+  'hydromorphone': ['!!! ↓ REM','●●● ↓ N3','!!! ↑ Apn.cent.'],
+  'dilaudid':      ['!!! ↓ REM','●●● ↓ N3','!!! ↑ Apn.cent.'],
+  'methadone':     ['!!! ↓ REM','●●● ↓ N3','!!! ↑ Apn.cent.','!!! Pattern Biot'],
+  'fentanyl':      ['!!! ↓ REM','●●● ↓ N3','!!! ↑ Apn.cent.'],
+  'codeine':       ['!!! ↓ REM','●●● ↓ N3','!!! ↑ Apn.cent.'],
+  'tramadol':      ['●● ↓ REM','●● ↑ Apn.cent.','● ↑ WASO'],
+  'tramacet':      ['●● ↓ REM','●● ↑ Apn.cent.'],
+  // CV
+  'metoprolol':    ['●● ↓ REM','●● ↑ Lat.S.','●● ↑ WASO'],
+  'lopressor':     ['●● ↓ REM','●● ↑ Lat.S.','●● ↑ WASO'],
+  'propranolol':   ['●● ↓ REM','●● ↑ Lat.S.','●● ↑ WASO'],
+  'inderal':       ['●● ↓ REM','●● ↑ Lat.S.'],
+  'carvedilol':    ['●● ↓ REM','●● ↑ Lat.S.'],
+  'atenolol':      ['● ↑ Lat.S.'],
+  'bisoprolol':    ['● ↑ Lat.S.'],
+  'clonidine':     ['●● ↓ REM','●●● ↑ Lat.REM','● ↑ Lat.S.'],
+  'catapres':      ['●● ↓ REM','●●● ↑ Lat.REM'],
+  'amiodarone':    ['●● ↑ Lat.S.','●● ↑ WASO'],
+  'cordarone':     ['●● ↑ Lat.S.','●● ↑ WASO'],
+  'digoxine':      ['●● ↑ Lat.S.','●● ↑ WASO'],
+  'lanoxin':       ['●● ↑ Lat.S.','●● ↑ WASO'],
+  'furosemide':    ['● ↑ WASO'],
+  'lasix':         ['● ↑ WASO'],
+  'ramipril':      [],
+  'amlodipine':    [],
+  'norvasc':       [],
+  // Anticonvulsivants
+  'gabapentine':   ['●●● ↑ N3','● ↓ REM'],
+  'neurontin':     ['●●● ↑ N3','● ↓ REM'],
+  'pregabaline':   ['●●● ↑ N3','● ↓ REM'],
+  'lyrica':        ['●●● ↑ N3','● ↓ REM'],
+  'carbamazepine': ['●● ↓ REM','●● ↓ N3','● ↑ WASO'],
+  'tegretol':      ['●● ↓ REM','●● ↓ N3'],
+  'valproate':     ['● ↓ REM','● ↑ Apn.obstr.'],
+  'epival':        ['● ↓ REM','● ↑ Apn.obstr.'],
+  'depakene':      ['● ↓ REM'],
+  'lithium':       ['●● ↑ N3','●● ↑ MPM'],
+  'lithane':       ['●● ↑ N3','●● ↑ MPM'],
+  // Stimulants
+  'methylphenidate':['●● ↓ REM','●●● ↑ Lat.S.','●● ↑ WASO','●● Alpha NREM'],
+  'methylphenidate':['●● ↓ REM','●●● ↑ Lat.S.','●● ↑ WASO'],
+  'ritalin':       ['●● ↓ REM','●●● ↑ Lat.S.','●● ↑ WASO','●● Alpha NREM'],
+  'concerta':      ['●● ↓ REM','●●● ↑ Lat.S.','●● ↑ WASO'],
+  'biphentin':     ['●● ↓ REM','●●● ↑ Lat.S.','●● ↑ WASO'],
+  'vyvanse':       ['●● ↓ REM','●●● ↑ Lat.S.','●●● ↑ WASO'],
+  'adderall':      ['●● ↓ REM','●●● ↑ Lat.S.','●●● ↑ WASO'],
+  'dexedrine':     ['●● ↓ REM','●●● ↑ Lat.S.','●●● ↑ WASO'],
+  'modafinil':     ['●● ↑ Lat.S.','● Alpha NREM'],
+  'alertec':       ['●● ↑ Lat.S.','● Alpha NREM'],
+  // Divers
+  'prednisolone':  ['●●● ↓ REM','●● ↑ Lat.S.','●●● ↑ WASO'],
+  'prednisone':    ['●●● ↓ REM','●● ↑ Lat.S.','●●● ↑ WASO'],
+  'dexamethasone': ['●●● ↓ REM','●●● ↑ WASO'],
+  'theophylline':  ['●●● ↑ Lat.S.','●●● ↑ WASO','●● Alpha NREM'],
+  'levothyroxine': ['●● ↑ Lat.S.','●● ↑ WASO','●● ↑ MPM'],
+  'synthroid':     ['●● ↑ Lat.S.','●● ↑ WASO','●● ↑ MPM'],
+  'donepezil':     ['●●● EMG REM','●● ↑ WASO','●●● Masquage TCSP'],
+  'aricept':       ['●●● EMG REM','●● ↑ WASO','●●● Masquage TCSP'],
+  'rivastigmine':  ['●●● EMG REM','●● ↑ WASO'],
+  'exelon':        ['●●● EMG REM','●● ↑ WASO'],
+  'diphenhydramine':['●● ↑ MPM','●● ↑ WASO'],
+  'benadryl':      ['●● ↑ MPM','●● ↑ WASO'],
+  'doxylamine':    ['●● ↑ MPM','●● ↑ WASO'],
+  'gravol':        ['●● ↑ MPM','●● ↑ WASO'],
+  'pantoprazole':  [],
+  'metformine':    [],
+  'metformin':     [],
+  'atorvastatine': [],
+  'lipitor':       [],
+  'rosuvastatin':  [],
+  'crestor':       [],
+};
+
+function getMedPSG(nom) {
+  if(!nom) return [];
+  var key = nom.toLowerCase()
+    .replace(/[àâä]/g,'a').replace(/[éèêë]/g,'e').replace(/[îï]/g,'i')
+    .replace(/[ôö]/g,'o').replace(/[ùûü]/g,'u').replace(/[ç]/g,'c')
+    .replace(/[-\s]+/g,'').replace(/\(.*\)/g,'').trim();
+  // Cherche correspondance exacte puis partielle
+  if(MED_PSG[key]) return MED_PSG[key];
+  for(var k in MED_PSG) {
+    if(key.indexOf(k)>=0 || k.indexOf(key)>=0) return MED_PSG[k];
+  }
+  return [];
+}
+
+function getMedSeverite(effets) {
+  if(!effets || !effets.length) return '';
+  // trim() sur chaque effet pour éviter les espaces parasites de Haiku
+  if(effets.some(function(e){ return e.trim().startsWith('!!!'); })) return 'color:#b83232;font-weight:700';
+  if(effets.some(function(e){ return e.trim().startsWith('●●●'); })) return 'color:#c96a00;font-weight:600';
+  if(effets.some(function(e){ return e.trim().startsWith('●●'); })) return 'color:#2d7a4f';
+  return 'color:var(--muted)';
+}
+
+// Cache des classifications IA pour éviter les appels répétés
+var MED_PSG_CACHE = {};
+
+async function classifierMedIA(nom, medId) {
+  if(!IA_API_KEY || !nom) return;
+  var key = nom.toLowerCase().trim();
+  if(MED_PSG_CACHE[key] !== undefined) return; // déjà en cache
+  MED_PSG_CACHE[key] = []; // marquer comme en cours
+  try {
+    var response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': IA_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 150,
+        system: 'Tu es un expert en pharmacologie du sommeil PSG pour CSR Sommets. Tu utilises EXCLUSIVEMENT la nomenclature et les codes visuels du document de référence BCM-001 ci-dessous.\n\n=== DOCUMENT DE RÉFÉRENCE BCM-001 ===\nPSYCHOTROPES\nISRS ●●● MAJEUR Fluoxétine · Sertraline · Escitalopram · Paroxétine Méca. : ↑ Sérotonine → inhibe noyaux REM pontins ●●● ↓ REM ●●● ↑ Lat. REM ●● ↑ WASO ●● Masquage TCSP EEG : Latence REM > 90 min · Mvts oculaires en NREM · Staging REM difficile Note : Suppression REM peut masquer un TCSP | IRSN ●●● MAJEUR Venlafaxine (Effexor) · Duloxétine (Cymbalta) Méca. : Double inhibition 5-HT+NA → suppression REM > ISRS ●●● ↓ REM ●●● ↑ Lat. REM ●● ↑ WASO ●● Masquage TCSP EEG : Profil identique ISRS · Latence REM très allongée | Tricycliques (TCA) ●● MODÉRÉ Amitriptyline (Elavil) · Nortriptyline · Imipramine Méca. : Anti-H1 + anticholinergique → sédation + ↓ REM ●● ↓ REM ●● ↑ Lat. REM ●● ↑ N3/SWS EEG : N3 augmenté · REM réduit · Sédation prononcée au tracé | Trazodone ● MINEUR Desyrel Méca. : Antagoniste 5-HT2A → ↑ N3 sans supprimer le REM ● ↑ N3/SWS EEG : N3 favorisé · Architecture préservée · REM peu affecté Note : Profil le plus favorable parmi les AD en PSG\nMirtazapine ●● MODÉRÉ Remeron Méca. : Antagoniste α2+H1 → forte sédation + prise de poids ●● ↑ N3/SWS ●● ↑ Apn. obstr. EEG : N3 augmenté · TST long · IAH ↑ si poids récent Note : Surveiller IAH si gain pondéral — prise de poids aggrave OSA | Bupropion ●● MODÉRÉ Wellbutrin · Zyban Méca. : Inhibiteur DA+NA → activant · seul AD sans ↓ REM ●● ↑ Latence S. ●● ↑ WASO ●● Alpha NREM ↑ EEG : Alpha persistant début nuit · Latence allongée · REM INTACT Note : Seul AD qui préserve le REM | Antipsychotiques atypiques ●● MODÉRÉ Quétiapine (Seroquel) · Olanzapine · Rispéridone Méca. : Anti-H1 + antagoniste D2 → sédation + prise de poids ●● ↑ N3/SWS ●● ↑ Apn. obstr. ● ↑ MPM EEG : N3 augmenté · TST long · MPM possibles Note : Prise de poids → OSA aggravée · Surveiller IAH | Antipsychotiques typiques ●● MODÉRÉ Halopéridol (Haldol) · Chlorpromazine Méca. : Blocage D2 → akathisie/dyskinésies → fragmentation ●● ↑ MPM ●● ↑ WASO EEG : MPM fréquents et bien visibles · Fragmentation nocturne\nANXIOLYTIQUES & HYPNOTIQUES\nBenzodiazépines !!! CRITIQUE Clonazépam (Rivotril) · Lorazépam (Ativan) · Diazépam · Témazépam Méca. : Agoniste GABA-A → ↓ ondes lentes + relaxation VAS ●● ↓ REM ●●● ↓ N3/SWS ●●● ↑ Fuseaux N2 ●●● ↑ Apn. obstr. ●●● Bêta EEG ↑ EEG : Fuseaux N2 très denses · N3 quasi absent · Bêta 14-18 Hz · Staging N2/N3 ambigu Note : Relaxation musculaire VAS → aggravation OSA documentée | Z-drugs ●● MODÉRÉ Zopiclone (Imovane) · Zolpidem Méca. : Agoniste GABA-A sélectif α1 — profil respiratoire ≠ BZD ● ↓ N3/SWS ● ↑ Fuseaux N2 EEG : Fuseaux N2 légèrement ↑ · N3 modestement réduit · Parasomnies NREM possibles Note : Méta-analyse 2024 : pas d\'aggravation IAH vs placebo | Mélatonine ● MINEUR Circadin · Slenyto · vente libre Méca. : Agoniste MT1/MT2 → synchronisation circadienne Aucun impact PSG significatif EEG : Impact minimal · Architecture et REM préservés Note : Prescrit pour compenser ↓ mélatonine par bêtabloquants\nOPIOÏDES & ANALGÉSIQUES\nOpioïdes (usage chronique) !!! CRITIQUE Morphine · Oxycodone · Hydromorphone · Méthadone · Codéine Méca. : Agoniste µ → dépression tronc cérébral + centres resp. !!! ↓ REM ●●● ↓ N3/SWS !!! ↑ Apn. cent. ●● ↑ Apn. obstr. ●●● ↑ WASO !!! Pattern Biot ●● Bradypnées EEG : Apnées centrales en salves · Pattern Biot au canal flux · REM quasi absent · Bradypnées Note : ~30% des patients sous méthadone ont apnées centrales · Envisager ASV | Tramadol ●● MODÉRÉ Tramacet · Ultram · Tridural Méca. : Opioïde atypique + inhibiteur recapture 5-HT/NA ●● ↓ REM ●● ↑ Apn. cent. ● ↑ WASO EEG : Apnées centrales isolées · Surveiller canal flux\nCARDIOVASCULAIRES\nBêtabloquants liposolubles ●● MODÉRÉ Métoprolol (Lopressor) · Propranolol (Inderal) · Carvédilol Méca. : Blocage β1 pinéal → mélatonine endogène ↓ 50-80% ●● ↓ REM ●● ↑ Latence S. ●● ↑ WASO EEG : Latence allongée · REM réduit et tardif · Réveils fréquents Note : Supplément mélatonine souvent recommandé si insomnie | Clonidine ●● MODÉRÉ Catapres Méca. : Agoniste α2 → ↓ noradrénaline → ↓↓ REM dose-dépendant ●● ↓ REM ●●● ↑ Lat. REM ● ↑ Latence S. EEG : Latence REM très allongée · ↓ REM marqué · ↑ N2 · Effet hypnotique au tracé Note : À dose thérapeutique : REM réduit de ~40% vs baseline | Amiodarone ●● MODÉRÉ Cordarone Méca. : Effets CNS complexes → insomnie chez 3-40% des patients ●● ↑ Latence S. ●● ↑ WASO EEG : Éveils fréquents · Latence allongée · Cauchemars possibles Note : Effets CNS incluant insomnie rapportés dans la monographie du produit | Digoxine ●● MODÉRÉ Lanoxin Méca. : Aux taux plasmatiques élevés → effets CNS incluant insomnie ●● ↑ Latence S. ●● ↑ WASO EEG : Éveils fréquents · Cauchemars aux concentrations toxiques · Vérifier taux sérique Note : Impact PSG proportionnel aux taux plasmatiques — noter si taux récent disponible\nANTICONVULSIVANTS\nGabapentin / Prégabalin ●● MODÉRÉ Gabapentine (Neurontin) · Prégabaline (Lyrica) Méca. : Bloque canaux Ca²⁺ α2δ → ↑ N3 significatif ●●● ↑ N3/SWS ● ↓ REM EEG : N3 très augmenté · Staging N3 peut paraître anormal | Carbamazépine ●● MODÉRÉ Tégrétol · Carbatrol Méca. : Stabilisation canaux Na⁺ → ↓ activité neuronale ●● ↓ REM ●● ↓ N3/SWS ● ↑ WASO EEG : REM et N3 réduits · Pointes-ondes intercritiques possibles Note : Activité épileptiforme → interrompre et aviser le médecin | Valproate ● MINEUR Épival · Dépakene Méca. : GABAergique + Na⁺ → effet minimal sur architecture ● ↓ REM ● ↑ Apn. obstr. EEG : Tracé peu modifié · REM légèrement réduit | Lithium ●● MODÉRÉ Lithane · Carbolith Méca. : Modulation inositol → ↑ SWS + MPM possibles ●● ↑ N3/SWS ●● ↑ MPM EEG : N3 augmenté · MPM bien visibles\nSTIMULANTS & TDAH\nMéthylphénidate ●●● MAJEUR Ritalin · Concerta · Biphentin · Foquest Méca. : Inhibiteur recapture DA+NA → hyperactivité monoaminergique ●● ↓ REM ●● ↑ Lat. REM ●●● ↑ Latence S. ●● ↑ WASO ●● Alpha NREM ↑ EEG : Latence très allongée · Alpha persistant · REM tardif Note : Peut masquer narcolepsie · Prise < 6h avant coucher = résultats non représentatifs | Amphétamines / Lisdex. ●●● MAJEUR Vyvanse · Adderall XR · Dexédrine Méca. : Libération massive DA+NA → effets > méthylphénidate ●● ↓ REM ●● ↑ Lat. REM ●●● ↑ Latence S. ●●● ↑ WASO EEG : Latence extrême · Tracé très fragmenté · REM minimal Note : Demi-vie longue → impact nocturne même si prise matinale | Modafinil / Armodafinil ●● MODÉRÉ Alertec · Nuvigil Méca. : Inhibition recapture DA · Moins activant que amphétamines ●● ↑ Latence S. ● Alpha NREM ↑ EEG : Alpha augmenté · Latence allongée si prise tardive\nDIVERS\nAlcool !!! CRITIQUE Toutes formes — documenter si consommation le soir de l\'étude Méca. : GABAergique → ↑ N3 1re moitié · rebond REM 2e moitié ●● ↓ REM ●● ↑ N3/SWS ●●● ↑ Apn. obstr. ●●● ↑ WASO EEG : N3 dominant 1re partie · Rebond REM brutal 2e partie · OSA aggravée Note : Non représentatif si > 2 verres · Documenter dans le rapport | Cannabis (chronique) ●● MODÉRÉ THC · cannabinoïdes (usage quotidien) Méca. : Agoniste CB1 → ↓ REM · usage chronique → ↑ WASO ●● ↓ REM ●● ↑ WASO EEG : REM réduit · WASO augmenté en 2e moitié de nuit | Antihistaminiques 1re gén. ●● MODÉRÉ Diphénhydramine (Benadryl/Nytol) · Doxylamine (Gravol) Méca. : Anti-H1 + anticholinergique → sédation superficielle ●● ↑ MPM ●● ↑ WASO EEG : MPM visibles · Architecture fragmentée 2e partie | Inhibiteurs cholinestérase ●●● MAJEUR Donépézil (Aricept) · Rivastigmine (Exelon) Méca. : Inhibition AChE → ↑ ACh → activation REM + musculaire ●●● EMG REM ↑ ●● ↑ WASO ●●● Masquage TCSP EEG : EMG en REM notable · Peut simuler ou révéler un TCSP Note : Peut créer faux TCSP · Confirmer diagnostic sans médication\nCorticostéroïdes oraux ●●● MAJEUR Prednisone · Prednisolone · Dexaméthasone Méca. : ↓ sérotonine raphé → perturbation circadienne ●●● ↓ REM ●● ↑ Latence S. ●●● ↑ WASO EEG : REM fortement réduit · Éveils très fréquents Note : Impact documenté même après quelques jours de traitement | Théophylline ●●● MAJEUR Théo-Dur · Uniphyl · Aminophylline Méca. : Inhibition phosphodiestérase → AMPc ↑ → stimulation SNC ●●● ↑ Latence S. ●●● ↑ WASO ●● Alpha NREM ↑ EEG : Alpha persistant toute la nuit · Latence très allongée Note : Insomnie sévère même à doses thérapeutiques | Hormones thyroïdiennes ●● MODÉRÉ Lévothyroxine (Synthroid) — si surdosage / hyperthyroïdie Méca. : Excès T3/T4 → hyperactivation sympathique ●● ↑ Latence S. ●● ↑ WASO ●● ↑ MPM EEG : Éveils fréquents · MPM · FC élevée sur canal cardio Note : Vérifier TSH · Non représentatif si surdosage actif |\nMÉDICAMENTS & SOMMEIL Impact sur l\'architecture du sommeil · Tracés PSG · Référence rapide technologue Psychotropes · Anxiolytiques & Hypnotiques · Opioïdes · Cardiovasculaires · Anticonvulsivants · Stimulants · Divers | SÉVÉRITÉ !!! CRITIQUE Impact stratégie PAP / Dx ●●● MAJEUR Architecture fortement altérée ●● MODÉRÉ Impact partiel, à documenter ● MINEUR À noter au MSTP\n↓ REM Sommeil paradoxal | ↑ Lat. REM Délai 1er REM | ↓ N3/SWS Sommeil lent ↓ | ↑ N3/SWS Sommeil lent ↑ | ↑ Fuseaux N2 Spindles EEG | ↑ Apn. cent. Apnées centrales | ↑ Apn. obstr. Aggrav. OSA | ↑ Latence S. Endormissement | ↑ WASO Fragmentation | ↑ MPM Mvts membres | EMG REM ↑ Act. musc. REM | Bêta EEG ↑ 14-18 Hz diffus | Alpha NREM ↑ Act. alpha | Pattern Biot Resp. ataxique | Bradypnées Fréq. resp. ↓ | TCSP Trouble comport. REM\n=== FIN DU DOCUMENT ===\n\nEFFETS PSG — libellés exacts à utiliser :\n↓ REM, ↑ Lat.REM, ↓ N3/SWS, ↑ N3/SWS, ↑ Fuseaux N2, ↑ Apn.cent., ↑ Apn.obstr., ↑ Lat.S., ↑ WASO, ↑ MPM, EMG REM ↑, Bêta EEG ↑, Alpha NREM ↑, Pattern Biot, Bradypnées, Masquage TCSP\n\nRÈGLES :\n- Identifier la classe du médicament et consulter le document\n- Si le médicament ou sa classe est dans le document → utiliser exactement ses effets et niveaux de sévérité\n- Si non trouvé dans le document → appliquer tes connaissances générales AVEC la même nomenclature\n- Retourner UNIQUEMENT un tableau JSON ex: [\'●●● ↓ REM\',\'●● ↑ WASO\']\n- Sans effet PSG connu (ramipril, metformine, statines basiques) → []\n- Médicament totalement inconnu → null\n- Jamais de texte avant ou après le tableau JSON',
+        messages: [{ role: 'user', content: 'Médicament : ' + nom }]
+      })
+    });
+    var data = await response.json();
+    if(!response.ok) return;
+    var raw = data.content && data.content[0] ? data.content[0].text.trim() : 'null';
+    var effets;
+    try {
+      effets = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    } catch(e) { return; }
+    if(Array.isArray(effets)) {
+      // Normaliser chaque effet — trim et nettoyage espaces parasites
+      effets = effets.map(function(e){ return (e||'').trim(); }).filter(Boolean);
+      MED_PSG_CACHE[key] = effets;
+      MED_PSG[key] = effets;
+      renderMeds();
+    } else if(effets === null) {
+      // Médicament inconnu — mettre en cache comme vide pour éviter re-appel
+      MED_PSG_CACHE[key] = [];
+    }
+  } catch(e) {}
+}
+
 function renderMeds() {
   var el = document.getElementById('medList');
   if (!meds.length) {
-    el.innerHTML='<div style="color:var(--muted);font-size:12px;font-style:italic;grid-column:1/-1">Aucun médicament — utilisez le formulaire ci-dessous</div>';
+    el.innerHTML='<div style="color:var(--muted);font-size:12px;font-style:italic">Aucun médicament — utilisez le formulaire ci-dessous</div>';
     return;
   }
   var h = '';
   for (var i=0;i<meds.length;i++) {
     var m = meds[i];
-    var label = m.nom + (m.dose ? ' — ' + m.dose : '');
-    h += '<div class="med-item' + (m.id===editingMedId?' editing-blue':'') + '" style="cursor:pointer" onclick="editMed(' + m.id + ')" title="Cliquer pour modifier">'
-      + '<div style="font-size:13px">' + label + '</div>'
-      + '<div>' + (m.coucher ? '<span class="med-coucher">✓ coucher</span>' : '') + '</div>'
+    var effets = getMedPSG(m.nom);
+    // Si pas dans la base locale et clé API disponible → classification IA
+    if(!effets.length && IA_API_KEY) {
+      var cacheKey = (m.nom||'').toLowerCase().trim();
+      if(MED_PSG_CACHE[cacheKey] !== undefined) {
+        effets = MED_PSG_CACHE[cacheKey];
+      } else {
+        classifierMedIA(m.nom, m.id); // appel async silencieux
+      }
+    }
+    var sev = getMedSeverite(effets);
+    var effetsHtml = effets.length
+      ? '<span style="font-size:10px;' + sev + ';margin-left:6px">' + effets.join('  ') + '</span>'
+      : '<span style="font-size:10px;color:var(--border)">—</span>';
+    var label = '<span style="font-weight:600">' + m.nom + '</span>'
+      + (m.dose ? '<span style="color:var(--muted);font-size:11px"> ' + m.dose + '</span>' : '')
+      + (m.coucher ? '<span class="med-coucher" style="font-size:10px;margin-left:4px">✓ coucher</span>' : '');
+    h += '<div class="med-item' + (m.id===editingMedId?' editing-blue':'') + '" style="cursor:pointer;grid-template-columns:1fr auto" onclick="editMed(' + m.id + ')" title="Cliquer pour modifier">'
+      + '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:2px">' + label + effetsHtml + '</div>'
       + '<button class="med-del" onclick="event.stopPropagation();deleteMed(' + m.id + ')">×</button>'
       + '</div>';
   }
@@ -2023,8 +2233,17 @@ function buildSection_finNuit(inh) {
   var L = [];
   L.push('── COMMENTAIRES DE RÉVISION ──');
   if(v('commentairesFin')) { L.push(v('commentairesFin')); L.push(''); }
-  L.push('Le questionnaire d\'évaluation de la nuit a été complété. Les règles de cotation AASM v3 ont été appliquées et les détails sont consignés au rapport d\'enregistrement. L\'étude a été distribuée dans les systèmes G3, Dropbox et dans les notes cliniques Juvonno.');
-  L.push('');
+  // Construire le paragraphe final dynamiquement selon les selects
+  var parties = [];
+  var q = v('questNuit');
+  if(q === 'complété') parties.push('Le questionnaire d\'évaluation de la nuit a été complété.');
+  else if(q === 'refusé par le client') parties.push('Le questionnaire d\'évaluation de la nuit a été refusé par le client.');
+  else if(q === 'non-rempli') parties.push('Le questionnaire d\'évaluation de la nuit n\'a pas été rempli.');
+  var r = v('regleScoring');
+  if(r) parties.push(r);
+  var d = v('etudeDistrib');
+  if(d) parties.push(d);
+  if(parties.length) { L.push(parties.join(' ')); L.push(''); }
   return L;
 }
 
@@ -2873,8 +3092,11 @@ CHAMPS DISPONIBLES ET ACTIONS :
 
 MODULES ADDITIONNELS :
 {"action":"activerModule","module":"titration"}
-{"action":"afficherModule","module":"titration"} // expand le module et ferme les autres
-{"action":"fermerModule","module":"o2"}            // collapse un module spécifique
+{"action":"afficherModule","module":"3"}          // expand le module et ferme les autres
+{"action":"afficherModule","module":"évaluation"} // par nom — variantes acceptées:
+// modules 1-6: "1","2","3","4","5","6" ou "identification","etude","évaluation","montage","journal","fin"
+// modules additionnels: "titration","o2","oxygène","zopiclone","nuit partagée","tile"
+{"action":"fermerModule","module":"4"}            // collapse un module spécifique
 {"action":"activerModule","module":"o2"}
 {"action":"activerModule","module":"zopiclone"}
 {"action":"activerModule","module":"tile-suite"}
@@ -2972,6 +3194,9 @@ MODULES ADDITIONNELS :
 ── NAVIGATION ET INTERFACE ──
 {"action":"editerNote"}
 {"action":"enrichirIA"}
+{"action":"copierNote"}         // copie la note finale (vue Éditer la note)
+{"action":"copierNoteIA"}       // copie la note enrichie par l'IA
+{"action":"enrichirIAetCopier"} // enrichit avec l'IA puis copie automatiquement
 {"action":"retourApercu"}
 {"action":"exporter"}
 {"action":"modeSombre"}
@@ -3160,17 +3385,23 @@ function agentAppliquerAction(a) {
     case 'afficherModule': {
       // Mapping nom → ID de la card
       var modCards = {
-        '1':'card-01','identification':'card-01',
-        '2':'card-02','etude':'card-02','type':'card-02',
-        '3':'card-03','evaluation':'card-03',
-        '4':'card-04','montage':'card-04',
-        '5':'card-05','journal':'card-05',
-        '6':'card-06','fin':'card-06',
-        'titration':'section-titration','ppc':'section-titration',
-        'o2':'section-o2','oxygene':'section-o2','oxygène':'section-o2',
-        'zopiclone':'section-zopiclone',
-        'sn':'section-sn','nuit partagée':'section-sn','nuit':'section-sn',
-        'tile':'section-tile-suite','tile-suite':'section-tile-suite'
+        '1':'card-01','identification':'card-01','ident':'card-01',
+        '2':'card-02','etude':'card-02','type':'card-02','type d\'etude':'card-02',
+        '3':'card-03','evaluation':'card-03','évaluation':'card-03','eval':'card-03',
+          'évaluation initiale':'card-03','evaluation initiale':'card-03','signes vitaux':'card-03',
+        '4':'card-04','montage':'card-04','technique':'card-04','démarrage':'card-04',
+          'demarrage':'card-04','appareillage':'card-04',
+        '5':'card-05','journal':'card-05','evenements':'card-05','événements':'card-05',
+          'journal général':'card-05','notes':'card-05',
+        '6':'card-06','fin':'card-06','fin de nuit':'card-06','revision':'card-06','révision':'card-06',
+        'titration':'section-titration','ppc':'section-titration','titration ppc':'section-titration',
+        'o2':'section-o2','oxygene':'section-o2','oxygène':'section-o2','o2 appoint':'section-o2',
+          'oxygène d\'appoint':'section-o2','oxygene d\'appoint':'section-o2',
+        'zopiclone':'section-zopiclone','zopi':'section-zopiclone',
+        'sn':'section-sn','nuit partagée':'section-sn','nuit partagee':'section-sn',
+          'nuit':'section-sn','bascule':'section-sn','partagée':'section-sn',
+        'tile':'section-tile-suite','tile-suite':'section-tile-suite','mslt':'section-tile-suite',
+          'tile lendemain':'section-tile-suite'
       };
       var cardId = modCards[(a.module||'').toLowerCase()];
       if(cardId) {
@@ -3195,9 +3426,17 @@ function agentAppliquerAction(a) {
       break; }
     case 'fermerModule': {
       var modCards2 = {
-        '1':'card-01','2':'card-02','3':'card-03','4':'card-04','5':'card-05','6':'card-06',
-        'titration':'section-titration','o2':'section-o2','zopiclone':'section-zopiclone',
-        'sn':'section-sn','tile':'section-tile-suite','tile-suite':'section-tile-suite'
+        '1':'card-01','identification':'card-01',
+        '2':'card-02','etude':'card-02','type':'card-02',
+        '3':'card-03','evaluation':'card-03','évaluation':'card-03','évaluation initiale':'card-03',
+        '4':'card-04','montage':'card-04','appareillage':'card-04',
+        '5':'card-05','journal':'card-05','événements':'card-05',
+        '6':'card-06','fin':'card-06','révision':'card-06',
+        'titration':'section-titration','ppc':'section-titration',
+        'o2':'section-o2','oxygène':'section-o2','oxygene':'section-o2',
+        'zopiclone':'section-zopiclone','zopi':'section-zopiclone',
+        'sn':'section-sn','nuit partagée':'section-sn','nuit partagee':'section-sn',
+        'tile':'section-tile-suite','tile-suite':'section-tile-suite'
       };
       var cardId2 = modCards2[(a.module||'').toLowerCase()];
       if(cardId2) {
@@ -3402,6 +3641,21 @@ function agentAppliquerAction(a) {
       genererNote();
       setTimeout(function(){ iaGenererNote(); }, 500);
       label = 'IA : enrichissement lancé'; ok = true;
+      break;
+    case 'copierNote':
+      copyNote(); label = 'Note copiée'; ok = true;
+      break;
+    case 'copierNoteIA':
+      copyNoteIA(); label = 'Note IA copiée'; ok = true;
+      break;
+    case 'enrichirIAetCopier':
+      genererNote();
+      setTimeout(function(){
+        iaGenererNote().then(function(){
+          setTimeout(function(){ copyNoteIA(); agentAjouterLog('Note IA copiée'); }, 800);
+        });
+      }, 500);
+      label = 'IA : enrichissement + copie automatique'; ok = true;
       break;
     case 'retourApercu':
       retourApercu(); label = 'Vue : Aperçu'; ok = true;
