@@ -943,6 +943,9 @@ var MED_PSG = {
   'fluoxetine':    ['●●● ↓ REM','●●● ↑ Lat.REM','●● ↑ WASO','●● Masquage TCSP'],
   'sertraline':    ['●●● ↓ REM','●●● ↑ Lat.REM','●● ↑ WASO','●● Masquage TCSP'],
   'escitalopram':  ['●●● ↓ REM','●●● ↑ Lat.REM','●● ↑ WASO','●● Masquage TCSP'],
+  // Variantes Chrome pour escitalopram
+  'etsituallaisprendre': ['●●● ↓ REM','●●● ↑ Lat.REM','●● ↑ WASO','●● Masquage TCSP'],
+  'estcesituallaisprendre': ['●●● ↓ REM','●●● ↑ Lat.REM','●● ↑ WASO','●● Masquage TCSP'],
   'citalopram':    ['●●● ↓ REM','●●● ↑ Lat.REM','●● ↑ WASO'],
   'paroxetine':    ['●●● ↓ REM','●●● ↑ Lat.REM','●● ↑ WASO'],
   // IRSN
@@ -1064,12 +1067,37 @@ var MED_PSG = {
   'crestor':       [],
 };
 
+// Corrections Chrome → nom médicament correct
+var CHROME_MED_FIXES = {
+  'etsituallaisprendre':'escitalopram','estcesituallaisprendre':'escitalopram',
+  'lexipro':'escitalopram','lexapro':'escitalopram','lexiquepro':'escitalopram',
+  'cipralex':'escitalopram','etcipro':'escitalopram',
+  'vendslafascine':'venlafaxine','vendslamasine':'venlafaxine',
+  'remeron':'mirtazapine','rémeron':'mirtazapine',
+  'seroquel':'quetiapine','séroquel':'quetiapine',
+  'rivotril':'clonazepam','ativan':'lorazepam',
+  'imovane':'zopiclone','stilnox':'zolpidem',
+  'concerta':'methylphenidate','ritalin':'methylphenidate',
+  'vyvanse':'lisdexamfetamine','adderall':'amphetamine',
+  'wellbutrin':'bupropion','zyban':'bupropion',
+  'effexor':'venlafaxine','cymbalta':'duloxetine',
+  'desyrel':'trazodone','aricept':'donepezil',
+  'alertec':'modafinil','synthroid':'levothyroxine',
+  'cordarone':'amiodarone','lanoxin':'digoxine',
+  'lopressor':'metoprolol','inderal':'propranolol',
+  'neurontin':'gabapentine','lyrica':'pregabaline',
+  'tegretol':'carbamazepine','epival':'valproate',
+  'lithane':'lithium','lasix':'furosemide',
+};
+
 function getMedPSG(nom) {
   if(!nom) return [];
   var key = nom.toLowerCase()
     .replace(/[àâä]/g,'a').replace(/[éèêë]/g,'e').replace(/[îï]/g,'i')
     .replace(/[ôö]/g,'o').replace(/[ùûü]/g,'u').replace(/[ç]/g,'c')
     .replace(/[-\s]+/g,'').replace(/\(.*\)/g,'').trim();
+  // Appliquer corrections Chrome
+  if(CHROME_MED_FIXES[key]) key = CHROME_MED_FIXES[key];
   // Cherche correspondance exacte puis partielle
   if(MED_PSG[key]) return MED_PSG[key];
   for(var k in MED_PSG) {
@@ -1131,6 +1159,30 @@ async function classifierMedIA(nom, medId) {
   } catch(e) {}
 }
 
+var DEFS_PSG = {
+  '↓ REM':'Sommeil paradoxal réduit',
+  '↑ Lat.REM':'Délai avant le 1er REM allongé',
+  '↓ N3/SWS':'Sommeil lent profond réduit',
+  '↑ N3/SWS':'Sommeil lent profond augmenté',
+  '↑ Fuseaux N2':'Spindles EEG en N2 augmentés',
+  '↑ Apn.cent.':'Apnées centrales augmentées',
+  '↑ Apn.obstr.':'Apnées obstructives aggravées (OSA)',
+  '↑ Lat.S.':'Latence \u00e0 l\u2019endormissement allong\u00e9e',
+  '↑ WASO':'Éveils après endormissement — fragmentation',
+  '↑ MPM':'Mouvements périodiques des membres',
+  'EMG REM ↑':'Activité musculaire en REM augmentée',
+  'Bêta EEG ↑':'Activité bêta EEG 14-18 Hz diffuse',
+  'Alpha NREM ↑':'Activité alpha en sommeil NREM',
+  'Pattern Biot':'Respiration ataxique — apnées centrales en salves',
+  'Bradypnées':'Fréquence respiratoire réduite',
+  'Masquage TCSP':'Peut masquer ou révéler un TCSP',
+  'TCSP':'Trouble comportemental en sommeil paradoxal',
+  '!!!':'CRITIQUE — Impact stratégie PAP / Dx',
+  '●●●':'MAJEUR — Architecture fortement altérée',
+  '●●':'MODÉRÉ — Impact partiel, à documenter',
+  '●':'MINEUR — À noter au rapport',
+  '● Minimal':'Impact PSG minimal ou absent'
+};
 function renderMeds() {
   var el = document.getElementById('medList');
   if (!meds.length) {
@@ -1151,9 +1203,21 @@ function renderMeds() {
       }
     }
     var sev = getMedSeverite(effets);
-    var effetsHtml = effets.length
-      ? '<span style="font-size:10px;' + sev + ';margin-left:6px">' + effets.join('  ') + '</span>'
-      : '<span style="font-size:10px;color:var(--border)">—</span>';
+    var effetsHtml = '';
+    if(effets.length) {
+      effetsHtml = '<span style="font-size:10px;' + sev + ';margin-left:6px">'
+        + effets.map(function(e) {
+            // Chercher une définition pour cet effet
+            var def = '';
+            for(var k in DEFS_PSG) { if(e.indexOf(k) >= 0) { def = DEFS_PSG[k]; break; } }
+            return def
+              ? '<span title="' + def + '" style="cursor:help;border-bottom:1px dotted currentColor">' + e + '</span>'
+              : e;
+          }).join('  ')
+        + '</span>';
+    } else {
+      effetsHtml = '<span style="font-size:10px;color:var(--border)">—</span>';
+    }
     var label = '<span style="font-weight:600">' + m.nom + '</span>'
       + (m.dose ? '<span style="color:var(--muted);font-size:11px"> ' + m.dose + '</span>' : '')
       + (m.coucher ? '<span class="med-coucher" style="font-size:10px;margin-left:4px">✓ coucher</span>' : '');
@@ -3140,11 +3204,7 @@ MODULES ADDITIONNELS :
 {"action":"setSnPressionDepart","mode":"BiPAP-ST","ipap":"12","epap":"6","fr":"14"}
 
 ── MODULE 5 : JOURNAL GÉNÉRAL ──
-{"action":"addEvent","heure":"23:15","cat":"Réveil client","desc":"aux toilettes"}
-{"action":"editEvent","heure":"23:15","cat":"Réveil client","desc":"aux toilettes, rendormi rapidement"}
-{"action":"deleteEvent","heure":"23:15"}
-// catégories: "Réveil client","Toilettes","Repositionnement","Intervention clinicien","Observation clinique","Autre"
-// Si repositionnement, inclure "position" pour mettre à jour la position active
+// Événements de nuit — saisis manuellement uniquement (ne pas gérer via agent)
 {"action":"setPosition","valeur":"dorsale"} ou "latéral gauche" ou "latéral droit" ou "ventrale"
 {"action":"setCommentairesEvolution","valeur":"texte"}
 
@@ -3155,26 +3215,12 @@ MODULES ADDITIONNELS :
 {"action":"setZopiEffets","valeur":"somnolence légère"}
 
 ── MODULE TITRATION PPC ──
-{"action":"addPalier","heure":"23:00","mode":"CPAP","pression":"8","motif":"Apnées obstructives","position":"DOS","commentaire":""}
-{"action":"addPalier","heure":"02:00","mode":"BiPAP","ipap":"14","epap":"8","motif":"Apnées centrales","position":"","commentaire":""}
-{"action":"addPalier","heure":"03:00","mode":"BiPAP-ST","ipap":"14","epap":"8","fr":"14","motif":"Désaturation","position":"VENTRE","commentaire":""}
-{"action":"editPalier","heure":"23:00","mode":"CPAP","pression":"9","motif":"Apnées obstructives","position":"DOS","commentaire":""}
-{"action":"deletePalier","heure":"23:00"}
-// motifs: "Apnées obstructives","Hypopnées","Ronflement","RERAs","Apnées centrales","Désaturation","Pression thérapeutique atteinte","Intolérance — descente","Autre"
-// positions: "DOS","CÔTÉ G","CÔTÉ D","VENTRE" ou "" si non mentionné
-// Masque / Mentonnière :
-{"action":"addMasque","heure":"01:30","equipement":"masque","type":"Nasal","modele":"AirFit N20","taille":"M","raison":"Fuite excessive"}
-{"action":"addMasque","heure":"02:00","equipement":"mentonniere","action_ment":"Ajout","modele":"ResMed S/M","raison":"Fuites buccales"}
-{"action":"editMasque","heure":"01:30","equipement":"masque","type":"Nasal","modele":"AirFit N20","taille":"L","raison":""}
-{"action":"deleteMasque","heure":"01:30"}
+// Paliers de pression, masques et mentonnières — saisis manuellement uniquement
+// L'agent peut activer/désactiver le module mais ne gère pas les entrées
 
 ── MODULE OXYGÈNE D'APPOINT ──
-{"action":"addO2","heure":"02:00","evt":"Initiation","debit":"1.0","spo2":"87","mode":"canule nasale 2e voie"}
-{"action":"editO2","heure":"02:00","evt":"Ajustement débit","debit":"1.5","spo2":"92","mode":"canule nasale 2e voie"}
-{"action":"deleteO2","heure":"02:00"}
-// événements: "Initiation","Ajustement débit","Contrôle de SpO₂","Cessation"
-// débits: "0.5","1.0","1.5","2.0","2.5","3.0","3.5","4.0"
-// modes: "canule nasale 2e voie","pièce en T (circuit PPC)"
+// Débits O2 — saisis manuellement uniquement
+// L'agent peut activer/désactiver le module et gérer les pressions cylindre :
 {"action":"setPsiDebut","valeur":"1800"}
 {"action":"setPsiFin","valeur":"600"}
 
@@ -3255,7 +3301,7 @@ NOMS PROPRES :
 MÉDICAMENTS :
 - "réméron", "remets", "raie" → Remeron (ou mirtazapine — bien reconnu)
 - "ventolin" → salbutamol (acceptable)
-- "et si tu allais prendre", "est-ce si tu allais prendre" → escitalopram
+- "et si tu allais prendre", "est-ce si tu allais prendre", "et si allais prendre", "acide assez", "acidité", "est assez tu", "Lexi pro", "Lexapro", "lexique pro", "et Cipro" → escitalopram (Lexapro/Cipralex)
 - "vends la fascine" → venlafaxine (parfois bien reconnu)
 - "quétiapine" → quetiapine (acceptable)
 
@@ -3713,70 +3759,12 @@ function agentAppliquerAction(a) {
     case 'setTilePPC':
       if(setField('tilePPC', a.valeur)) { label = 'TILE PPC : ' + (a.valeur.indexOf('oui')>=0?'oui':a.valeur.indexOf('non applicable')>=0?'non applicable':'non'); ok = true; }
       break;
-    case 'editPalier': {
-      var idx = paliers.findIndex(function(p){ return p.time === a.heure; });
-      if(idx >= 0) {
-        var p = paliers[idx];
-        var presStr = '';
-        if(a.mode === 'BiPAP') presStr = 'BiPAP IPAP ' + a.ipap + ' / EPAP ' + a.epap + ' cmH₂O';
-        else if(a.mode === 'BiPAP-ST') presStr = 'BiPAP-ST IPAP ' + a.ipap + ' / EPAP ' + a.epap + ' cmH₂O' + (a.fr?' FR '+a.fr+'/min':'');
-        else presStr = 'CPAP ' + (a.pression||a.cpap||p.presStr.replace(/\D/g,'')) + ' cmH₂O';
-        paliers[idx] = {id:p.id, time:p.time, presStr:presStr, motif:a.motif||p.motif, pos:a.position||p.pos, comment:a.commentaire||p.comment};
-        renderPaliers(); label = 'Palier ' + a.heure + ' modifié → ' + presStr; ok = true;
-      }
-      break; }
-    case 'deletePalier': {
-      var before = paliers.length;
-      paliers = paliers.filter(function(p){ return p.time !== a.heure; });
-      if(paliers.length < before) { renderPaliers(); label = 'Palier ' + a.heure + ' supprimé'; ok = true; }
-      break; }
-    case 'editMasque': {
-      var idx = masqueChanges.findIndex(function(m){ return m.time === a.heure; });
-      if(idx >= 0) {
-        var m = masqueChanges[idx];
-        var descM = a.equipement === 'mentonniere'
-          ? (a.action_ment||'Ajout') + ' mentonnière' + (a.modele?' '+a.modele:'')
-          : (a.type||'Masque') + (a.modele?' '+a.modele:'') + (a.taille?' taille '+a.taille:'');
-        masqueChanges[idx] = {id:m.id, time:m.time, desc:descM, raison:a.raison||m.raison};
-        renderMasques(); label = 'Masque ' + a.heure + ' modifié'; ok = true;
-      }
-      break; }
-    case 'deleteMasque': {
-      var before = masqueChanges.length;
-      masqueChanges = masqueChanges.filter(function(m){ return m.time !== a.heure; });
-      if(masqueChanges.length < before) { renderMasques(); label = 'Masque ' + a.heure + ' supprimé'; ok = true; }
-      break; }
-    case 'editEvent': {
-      var idx = events.findIndex(function(e){ return e.time === a.heure; });
-      if(idx >= 0) {
-        events[idx] = {id:events[idx].id, time:events[idx].time, cat:a.cat||events[idx].cat, desc:a.desc||events[idx].desc};
-        renderEvents(); label = 'Événement ' + a.heure + ' modifié'; ok = true;
-      }
-      break; }
-    case 'deleteEvent': {
-      var before = events.length;
-      events = events.filter(function(e){ return e.time !== a.heure; });
-      if(events.length < before) { renderEvents(); label = 'Événement ' + a.heure + ' supprimé'; ok = true; }
-      break; }
-    case 'editO2': {
-      var idx = o2Events.findIndex(function(o){ return o.time === a.heure; });
-      if(idx >= 0) {
-        var o = o2Events[idx];
-        o2Events[idx] = {id:o.id, time:o.time, evt:a.evt||o.evt, debit:a.debit||o.debit, spo2:a.spo2||o.spo2, mode:a.mode||o.mode};
-        renderO2(); label = 'O₂ ' + a.heure + ' modifié'; ok = true;
-      }
-      break; }
     case 'setPsiDebut':
       if(setField('o2PsiDebut', a.valeur)) { label = 'Cylindre initial : ' + a.valeur + ' psi'; ok = true; }
       break;
     case 'setPsiFin':
       if(setField('o2PsiFin', a.valeur)) { label = 'Cylindre final : ' + a.valeur + ' psi'; ok = true; }
       break;
-    case 'deleteO2': {
-      var before = o2Events.length;
-      o2Events = o2Events.filter(function(o){ return o.time !== a.heure; });
-      if(o2Events.length < before) { renderO2(); label = 'O₂ ' + a.heure + ' supprimé'; ok = true; }
-      break; }
     case 'editMed': {
       var idx = meds.findIndex(function(m){ return m.nom.toLowerCase() === (a.nom||'').toLowerCase(); });
       if(idx >= 0) {
@@ -3800,38 +3788,6 @@ function agentAppliquerAction(a) {
         var btnPos = document.getElementById({dorsal:'qDorsal',latD:'qLatD',latG:'qLatG',ventral:'qVentral'}[posKey]);
         if(btnPos) { btnPos.click(); label = 'Position : ' + a.valeur; ok = true; }
       }
-      break;
-    case 'addEvent':
-      events.push({id:Date.now(), time:a.heure, cat:a.cat||'Autre', desc:a.desc||''});
-      renderEvents(); label = a.heure + ' — ' + (a.cat||'') + (a.desc?' '+a.desc:''); ok = true;
-      // Position : si mentionnée → mettre à jour ; sinon → position active actuelle s'applique déjà
-      if(a.position) agentAppliquerAction({action:'setPosition', valeur:a.position});
-      break;
-    case 'addPalier':
-      if(!modulesActifs['titration']) { var bt=document.getElementById('mod-titration'); if(bt) bt.click(); }
-      // Construire la chaîne de pression selon le mode
-      var presStr = '';
-      if(a.mode === 'BiPAP') presStr = 'BiPAP IPAP ' + a.ipap + ' / EPAP ' + a.epap + ' cmH₂O';
-      else if(a.mode === 'BiPAP-ST') presStr = 'BiPAP-ST IPAP ' + a.ipap + ' / EPAP ' + a.epap + ' cmH₂O' + (a.fr?' FR '+a.fr+'/min':'');
-      else presStr = 'CPAP ' + (a.pression||a.cpap||'') + ' cmH₂O';
-      paliers.push({id:Date.now(), time:a.heure, presStr:presStr, motif:a.motif||'', pos:a.position||'', comment:a.commentaire||''});
-      renderPaliers(); label = a.heure + ' — ' + presStr; ok = true;
-      break;
-    case 'addMasque':
-      if(!modulesActifs['titration']) { var bt=document.getElementById('mod-titration'); if(bt) bt.click(); }
-      var descMasque = '';
-      if(a.equipement === 'mentonniere') {
-        descMasque = (a.action_ment||'Ajout') + ' mentonnière' + (a.modele?' '+a.modele:'');
-      } else {
-        descMasque = (a.type||'Masque') + (a.modele?' '+a.modele:'') + (a.taille?' taille '+a.taille:'');
-      }
-      masqueChanges.push({id:Date.now(), time:a.heure, desc:descMasque, raison:a.raison||''});
-      renderMasques(); label = a.heure + ' — ' + descMasque; ok = true;
-      break;
-    case 'addO2':
-      if(!modulesActifs['o2']) { var bt=document.getElementById('mod-o2'); if(bt) bt.click(); }
-      o2Events.push({id:Date.now(), time:a.heure, evt:a.evt||'', debit:a.debit||'', spo2:a.spo2||'', mode:a.mode||''});
-      renderO2(); label = a.heure + ' — O₂ ' + (a.debit||'') + ' L/min'; ok = true;
       break;
   }
   if(ok) { agentAjouterLog(label); updatePreview(); }
