@@ -301,9 +301,16 @@ textarea:focus::placeholder{color:transparent}
     <!-- Médication : liste en demi-largeur + formulaire en pleine largeur -->
     <div>
       <label style="font-weight:600;color:var(--navy);margin-bottom:6px;display:block">Médication documentée</label>
+      <div id="analyseInterBox" style="display:none;padding:5px 0;margin-bottom:8px">
+        <label id="analyseInterLabel" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--navy);font-weight:500">
+          <input type="checkbox" id="analyseInterCheck" style="width:auto;accent-color:var(--navy)" onchange="toggleAnalyseInter(this.checked)">
+          <span>💊 Générer l’analyse des interactions médicamenteuses</span>
+        </label>
+      </div>
       <div id="medList" style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">
         <div style="color:var(--muted);font-size:12px;font-style:italic;grid-column:1/-1">Aucun médicament — utilisez le formulaire ci-dessous</div>
       </div>
+
       <div style="background:var(--gray);border:1px solid var(--border);border-radius:6px;padding:10px">
         <div class="row c2" style="margin-bottom:6px">
           <div><label>Médicament</label><input type="text" autocomplete="off" autocorrect="off" spellcheck="false" id="medNom" placeholder="Ex: ramipril"></div>
@@ -954,8 +961,8 @@ var MED_PSG = {
   'duloxetine':    ['●●● ↓ REM','●●● ↑ Lat.REM','●● ↑ WASO'],
   'cymbalta':      ['●●● ↓ REM','●●● ↑ Lat.REM','●● ↑ WASO'],
   // Autres AD
-  'mirtazapine':   ['●● ↑ N3','●● ↑ Apn.obstr.'],
-  'remeron':       ['●● ↑ N3','●● ↑ Apn.obstr.'],
+  'mirtazapine':   ['●● ↑ N3/SWS','●● ↑ Poids→OSA'],
+  'remeron':       ['●● ↑ N3/SWS','●● ↑ Poids→OSA'],
   'trazodone':     ['● ↑ N3'],
   'desyrel':       ['● ↑ N3'],
   'bupropion':     ['●● ↑ Lat.S.','●● ↑ WASO','●● Alpha NREM'],
@@ -965,11 +972,11 @@ var MED_PSG = {
   'elavil':        ['●● ↓ REM','●● ↑ Lat.REM','●● ↑ N3'],
   'nortriptyline': ['●● ↓ REM','●● ↑ N3'],
   // Antipsychotiques
-  'quetiapine':    ['●● ↑ N3','●● ↑ Apn.obstr.','● ↑ MPM'],
-  'seroquel':      ['●● ↑ N3','●● ↑ Apn.obstr.'],
-  'olanzapine':    ['●● ↑ N3','●● ↑ Apn.obstr.'],
-  'risperidone':   ['●● ↑ N3','●● ↑ Apn.obstr.','● ↑ MPM'],
-  'risperdal':     ['●● ↑ N3','●● ↑ Apn.obstr.'],
+  'quetiapine':    ['●● ↑ N3/SWS','●● ↑ Poids→OSA','● ↑ MPM'],
+  'seroquel':      ['●● ↑ N3/SWS','●● ↑ Poids→OSA'],
+  'olanzapine':    ['●● ↑ N3/SWS','●● ↑ Poids→OSA'],
+  'risperidone':   ['●● ↑ N3/SWS','●● ↑ Poids→OSA','● ↑ MPM'],
+  'risperdal':     ['●● ↑ N3/SWS','●● ↑ Poids→OSA'],
   'haloperidol':   ['●● ↑ MPM','●● ↑ WASO'],
   'haldol':        ['●● ↑ MPM','●● ↑ WASO'],
   // BZD
@@ -1160,23 +1167,24 @@ async function classifierMedIA(nom, medId) {
 }
 
 var DEFS_PSG = {
-  '↓ REM':'Sommeil paradoxal réduit',
-  '↑ Lat.REM':'Délai avant le 1er REM allongé',
-  '↓ N3/SWS':'Sommeil lent profond réduit',
-  '↑ N3/SWS':'Sommeil lent profond augmenté',
-  '↑ Fuseaux N2':'Spindles EEG en N2 augmentés',
-  '↑ Apn.cent.':'Apnées centrales augmentées',
-  '↑ Apn.obstr.':'Apnées obstructives aggravées (OSA)',
-  '↑ Lat.S.':'Latence \u00e0 l\u2019endormissement allong\u00e9e',
-  '↑ WASO':'Éveils après endormissement — fragmentation',
-  '↑ MPM':'Mouvements périodiques des membres',
-  'EMG REM ↑':'Activité musculaire en REM augmentée',
-  'Bêta EEG ↑':'Activité bêta EEG 14-18 Hz diffuse',
-  'Alpha NREM ↑':'Activité alpha en sommeil NREM',
-  'Pattern Biot':'Respiration ataxique — apnées centrales en salves',
-  'Bradypnées':'Fréquence respiratoire réduite',
-  'Masquage TCSP':'Peut masquer ou révéler un TCSP',
-  'TCSP':'Trouble comportemental en sommeil paradoxal',
+  '↓ REM':'REM — Rapid Eye Movement | Sommeil paradoxal réduit — rêves, consolidation mémoire',
+  '↑ Lat.REM':'REM Latency | Délai avant le 1er épisode de sommeil paradoxal allongé',
+  '↓ N3/SWS':'N3 / SWS — Slow Wave Sleep | Sommeil lent profond réduit — restauration physique',
+  '↑ N3/SWS':'N3 / SWS — Slow Wave Sleep | Sommeil lent profond augmenté',
+  '↑ Fuseaux N2':'Sleep Spindles | Fuseaux EEG en N2 augmentés — staging N2/N3 ambigu',
+  '↑ Apn.cent.':'Central Apneas | Apnées centrales augmentées — origine neurologique',
+  '↑ Apn.obstr.':'Obstructive Apneas | Apnées obstructives aggravées — relaxation VAS',
+  '↑ Poids→OSA':'Weight-Related OSA Risk | Risque d’aggravation OSA via prise de poids — surveiller IAH',
+  '↑ Lat.S.':'Sleep Onset Latency | Latence à l’endormissement allongée',
+  '↑ WASO':'WASO — Wake After Sleep Onset | Éveils après endormissement — fragmentation nocturne',
+  '↑ MPM':'PLM — Periodic Limb Movements | Mouvements périodiques des membres augmentés',
+  'EMG REM ↑':'REM EMG Elevation | Activité musculaire en sommeil paradoxal augmentée',
+  'Bêta EEG ↑':'Beta EEG Activity | Activité bêta 14-18 Hz diffuse — staging N2/N3 difficile',
+  'Alpha NREM ↑':'Alpha Intrusion | Activité alpha en NREM — sommeil non réparateur',
+  'Pattern Biot':'Biot Breathing | Respiration ataxique — apnées centrales en salves irrégulières',
+  'Bradypnées':'Respiratory Depression | Fréquence respiratoire réduite — surveiller canal flux',
+  'Masquage TCSP':'RBD Masking | Peut masquer ou révéler un trouble comportemental en sommeil paradoxal',
+  'TCSP':'RBD — REM Sleep Behavior Disorder | Trouble comportemental en sommeil paradoxal',
   '!!!':'CRITIQUE — Impact stratégie PAP / Dx',
   '●●●':'MAJEUR — Architecture fortement altérée',
   '●●':'MODÉRÉ — Impact partiel, à documenter',
@@ -1185,6 +1193,9 @@ var DEFS_PSG = {
 };
 function renderMeds() {
   var el = document.getElementById('medList');
+  // Afficher/masquer la checkbox analyse
+  var box = document.getElementById('analyseInterBox');
+  if(box) box.style.display = (meds.length > 0 && IA_API_KEY) ? 'block' : 'none';
   if (!meds.length) {
     el.innerHTML='<div style="color:var(--muted);font-size:12px;font-style:italic">Aucun médicament — utilisez le formulaire ci-dessous</div>';
     return;
@@ -1210,10 +1221,16 @@ function renderMeds() {
             // Chercher une définition pour cet effet
             var def = '';
             for(var k in DEFS_PSG) { if(e.indexOf(k) >= 0) { def = DEFS_PSG[k]; break; } }
-            return def
-              ? '<span title="' + def + '" style="cursor:help;border-bottom:1px dotted currentColor">' + e + '</span>'
-              : e;
-          }).join('  ')
+            if(def) {
+              var sev_label = e.trim().startsWith('!!!') ? 'CRITIQUE — '
+                : e.trim().startsWith('●●●') ? 'MAJEUR — '
+                : e.trim().startsWith('●●') ? 'MODÉRÉ — '
+                : e.trim().startsWith('●') ? 'MINEUR — '
+                : '';
+              return '<span title="' + sev_label + def + '" style="cursor:help">' + e + '</span>';
+            }
+            return e;
+          }).join(' ')
         + '</span>';
     } else {
       effetsHtml = '<span style="font-size:10px;color:var(--border)">—</span>';
@@ -2019,6 +2036,64 @@ function buildSection_entete(chambre, date, dossier, inh, etude) {
   return L;
 }
 
+
+// ─── ANALYSE INTERACTIONS MÉDICAMENTEUSES ───
+var analyseInterTexte = '';
+var analyseInterEnCours = false;
+
+function toggleAnalyseInter(actif) {
+  if(!IA_API_KEY) { document.getElementById('analyseInterCheck').checked = false; return; }
+  if(actif && meds.length > 0) {
+    genererAnalyseInter();
+  } else {
+    analyseInterTexte = '';
+    updatePreview();
+  }
+}
+
+async function genererAnalyseInter() {
+  if(!IA_API_KEY || !meds.length) return;
+  if(analyseInterEnCours) return;
+  analyseInterEnCours = true;
+  // Afficher "en cours" dans l'aperçu
+  analyseInterTexte = '[ Analyse en cours... ]';
+  updatePreview();
+  
+  var listeMeds = meds.map(function(m) {
+    return m.nom + (m.dose ? ' ' + m.dose : '') + (m.coucher ? ' (coucher)' : '');
+  }).join('\n');
+
+  var prompt_inter = 'Tu es un expert en pharmacologie du sommeil PSG pour CSR Sommets. Tu analyses la liste de médicaments d\'un patient PSG et génères un paragraphe clinique concis sur les effets attendus sur l\'architecture du sommeil.\n\nDOCUMENT DE RÉFÉRENCE BCM-001 :\nPSYCHOTROPES\nISRS ●●● MAJEUR* Fluoxétine · Sertraline · Escitalopram · Paroxétine Méca. : ↑ Sérotonine → inhibe noyaux REM pontins ●●● ↓ REM ●●● ↑ Lat. REM ●● ↑ WASO ●● Masquage TCSP EEG : Latence REM > 90 min · Mvts oculaires en NREM · Staging REM difficile Note : Suppression REM peut masquer un TCSP | IRSN ●●● MAJEUR Venlafaxine (Effexor) · Duloxétine (Cymbalta) Méca. : Double inhibition 5-HT+NA → suppression REM > ISRS ●●● ↓ REM ●●● ↑ Lat. REM ●● ↑ WASO ●● Masquage TCSP EEG : Profil identique ISRS · Latence REM très allongée | Tricycliques (TCA) ●● MODÉRÉ Amitriptyline (Elavil) · Nortriptyline · Imipramine Méca. : Anti-H1 + anticholinergique → sédation + ↓ REM ●● ↓ REM ●● ↑ Lat. REM ●● ↑ N3/SWS EEG : N3 augmenté · REM réduit · Sédation prononcée au tracé | Trazodone ● MINEUR Desyrel Méca. : Antagoniste 5-HT2A → ↑ N3 sans supprimer le REM ● ↑ N3/SWS EEG : N3 favorisé · Architecture préservée · REM peu affecté Note : Profil le plus favorable parmi les AD en PSG\n\nMirtazapine ●● MODÉRÉ Remeron Méca. : Antagoniste α2+H1 → forte sédation + prise de poids ●● ↑ N3/SWS ●● ↑ Apn. obstr. EEG : N3 augmenté · TST long · IAH ↑ si poids récent Note : Surveiller IAH si gain pondéral — prise de poids aggrave OSA | Bupropion ●● MODÉRÉ Wellbutrin · Zyban Méca. : Inhibiteur DA+NA → activant · seul AD sans ↓ REM ●● ↑ Latence S. ●● ↑ WASO ●● Alpha NREM ↑ EEG : Alpha persistant début nuit · Latence allongée · REM INTACT Note : Seul AD qui préserve le REM | Antipsychotiques atypiques ●● MODÉRÉ Quétiapine (Seroquel) · Olanzapine · Rispéridone Méca. : Anti-H1 + antagoniste D2 → sédation + prise de poids ●● ↑ N3/SWS ●● ↑ Apn. obstr. ● ↑ MPM EEG : N3 augmenté · TST long · MPM possibles Note : Prise de poids → OSA aggravée · Surveiller IAH | Antipsychotiques typiques ●● MODÉRÉ Halopéridol (Haldol) · Chlorpromazine Méca. : Blocage D2 → akathisie/dyskinésies → fragmentation ●● ↑ MPM ●● ↑ WASO EEG : MPM fréquents et bien visibles · Fragmentation nocturne\n\nANXIOLYTIQUES & HYPNOTIQUES\nBenzodiazépines !!! CRITIQUE Clonazépam (Rivotril) · Lorazépam (Ativan) · Diazépam · Témazépam Méca. : Agoniste GABA-A → ↓ ondes lentes + relaxation VAS ●● ↓ REM ●●● ↓ N3/SWS ●●● ↑ Fuseaux N2 ●●● ↑ Apn. obstr. ●●● Bêta EEG ↑ EEG : Fuseaux N2 très denses · N3 quasi absent · Bêta 14-18 Hz · Staging N2/N3 ambigu Note : Relaxation musculaire VAS → aggravation OSA documentée | Z-drugs ●● MODÉRÉ Zopiclone (Imovane) · Zolpidem Méca. : Agoniste GABA-A sélectif α1 — profil respiratoire ≠ BZD ● ↓ N3/SWS ● ↑ Fuseaux N2 EEG : Fuseaux N2 légèrement ↑ · N3 modestement réduit · Parasomnies NREM possibles Note : Méta-analyse 2024 : pas d\'aggravation IAH vs placebo | Mélatonine ● MINEUR Circadin · Slenyto · vente libre Méca. : Agoniste MT1/MT2 → synchronisation circadienne Aucun impact PSG significatif EEG : Impact minimal · Architecture et REM préservés Note : Prescrit pour compenser ↓ mélatonine par bêtabloquants\nOPIOÏDES & ANALGÉSIQUES\nOpioïdes (usage chronique) !!! CRITIQUE Morphine · Oxycodone · Hydromorphone · Méthadone · Codéine Méca. : Agoniste µ → dépression tronc cérébral + centres resp. !!! ↓ REM ●●● ↓ N3/SWS !!! ↑ Apn. cent. ●● ↑ Apn. obstr. ●●● ↑ WASO !!! Pattern Biot ●● Bradypnées EEG : Apnées centrales en salves · Pattern Biot au canal flux · REM quasi absent · Bradypnées Note : ~30% des patients sous méthadone ont apnées centrales · Envisager ASV | Tramadol ●● MODÉRÉ Tramacet · Ultram · Tridural Méca. : Opioïde atypique + inhibiteur recapture 5-HT/NA ●● ↓ REM ●● ↑ Apn. cent. ● ↑ WASO EEG : Apnées centrales isolées · Surveiller canal flux\n\nCARDIOVASCULAIRES\nBêtabloquants liposolubles ●● MODÉRÉ Métoprolol (Lopressor) · Propranolol (Inderal) · Carvédilol Méca. : Blocage β1 pinéal → mélatonine endogène ↓ 50-80% ●● ↓ REM ●● ↑ Latence S. ●● ↑ WASO EEG : Latence allongée · REM réduit et tardif · Réveils fréquents Note : Supplément mélatonine souvent recommandé si insomnie | Clonidine ●● MODÉRÉ Catapres Méca. : Agoniste α2 → ↓ noradrénaline → ↓↓ REM dose-dépendant ●● ↓ REM ●●● ↑ Lat. REM ● ↑ Latence S. EEG : Latence REM très allongée · ↓ REM marqué · ↑ N2 · Effet hypnotique au tracé Note : À dose thérapeutique : REM réduit de ~40% vs baseline | Amiodarone ●● MODÉRÉ Cordarone Méca. : Effets CNS complexes → insomnie chez 3-40% des patients ●● ↑ Latence S. ●● ↑ WASO EEG : Éveils fréquents · Latence allongée · Cauchemars possibles Note : Effets CNS incluant insomnie rapportés dans la monographie du produit | Digoxine ●● MODÉRÉ Lanoxin Méca. : Aux taux plasmatiques élevés → effets CNS incluant insomnie ●● ↑ Latence S. ●● ↑ WASO EEG : Éveils fréquents · Cauchemars aux concentrations toxiques · Vérifier taux sérique Note : Impact PSG proportionnel aux taux plasmatiques — noter si taux récent disponible\n\nANTICONVULSIVANTS\nGabapentin / Prégabalin ●● MODÉRÉ Gabapentine (Neurontin) · Prégabaline (Lyrica) Méca. : Bloque canaux Ca²⁺ α2δ → ↑ N3 significatif ●●● ↑ N3/SWS ● ↓ REM EEG : N3 très augmenté · Staging N3 peut paraître anormal | Carbamazépine ●● MODÉRÉ Tégrétol · Carbatrol Méca. : Stabilisation canaux Na⁺ → ↓ activité neuronale ●● ↓ REM ●● ↓ N3/SWS ● ↑ WASO EEG : REM et N3 réduits · Pointes-ondes intercritiques possibles Note : Activité épileptiforme → interrompre et aviser le médecin | Valproate ● MINEUR Épival · Dépakene Méca. : GABAergique + Na⁺ → effet minimal sur architecture ● ↓ REM ● ↑ Apn. obstr. EEG : Tracé peu modifié · REM légèrement réduit | Lithium ●● MODÉRÉ Lithane · Carbolith Méca. : Modulation inositol → ↑ SWS + MPM possibles ●● ↑ N3/SWS ●● ↑ MPM EEG : N3 augmenté · MPM bien visibles\n\nSTIMULANTS & TDAH\nMéthylphénidate ●●● MAJEUR Ritalin · Concerta · Biphentin · Foquest Méca. : Inhibiteur recapture DA+NA → hyperactivité monoaminergique ●● ↓ REM ●● ↑ Lat. REM ●●● ↑ Latence S. ●● ↑ WASO ●● Alpha NREM ↑ EEG : Latence très allongée · Alpha persistant · REM tardif Note : Peut masquer narcolepsie · Prise < 6h avant coucher = résultats non représentatifs | Amphétamines / Lisdex. ●●● MAJEUR Vyvanse · Adderall XR · Dexédrine Méca. : Libération massive DA+NA → effets > méthylphénidate ●● ↓ REM ●● ↑ Lat. REM ●●● ↑ Latence S. ●●● ↑ WASO EEG : Latence extrême · Tracé très fragmenté · REM minimal Note : Demi-vie longue → impact nocturne même si prise matinale | Modafinil / Armodafinil ●● MODÉRÉ Alertec · Nuvigil Méca. : Inhibition recapture DA · Moins activant que amphétamines ●● ↑ Latence S. ● Alpha NREM ↑ EEG : Alpha augmenté · Latence allongée si prise tardive\nDIVERS\nAlcool !!! CRITIQUE Toutes formes — documenter si consommation le soir de l\'étude Méca. : GABAergique → ↑ N3 1re moitié · rebond REM 2e moitié ●● ↓ REM ●● ↑ N3/SWS ●●● ↑ Apn. obstr. ●●● ↑ WASO EEG : N3 dominant 1re partie · Rebond REM brutal 2e partie · OSA aggravée Note : Non représentatif si > 2 verres · Documenter dans le rapport | Cannabis (chronique) ●● MODÉRÉ THC · cannabinoïdes (usage quotidien) Méca. : Agoniste CB1 → ↓ REM · usage chronique → ↑ WASO ●● ↓ REM ●● ↑ WASO EEG : REM réduit · WASO augmenté en 2e moitié de nuit | Antihistaminiques 1re gén. ●● MODÉRÉ Diphénhydramine (Benadryl/Nytol) · Doxylamine (Gravol) Méca. : Anti-H1 + anticholinergique → sédation superficielle ●● ↑ MPM ●● ↑ WASO EEG : MPM visibles · Architecture fragmentée 2e partie | Inhibiteurs cholinestérase ●●● MAJEUR Donépézil (Aricept) · Rivastigmine (Exelon) Méca. : Inhibition AChE → ↑ ACh → activation REM + musculaire ●●● EMG REM ↑ ●● ↑ WASO ●●● Masquage TCSP EEG : EMG en REM notable · Peut simuler ou révéler un TCSP Note : Peut créer faux TCSP · Confirmer diagnostic sans médication\n\nCorticostéroïdes oraux ●●● MAJEUR Prednisone · Prednisolone · Dexaméthasone Méca. : ↓ sérotonine raphé → perturbation circadienne ●●● ↓ REM ●● ↑ Latence S. ●●● ↑ WASO EEG : REM fortement réduit · Éveils très fréquents Note : Impact documenté même après quelques jours de traitement | Théophylline ●●● MAJEUR Théo-Dur · Uniphyl · Aminophylline Méca. : Inhibition phosphodiestérase → AMPc ↑ → stimulation SNC ●●● ↑ Latence S. ●●● ↑ WASO ●● Alpha NREM ↑ EEG : Alpha persistant toute la nuit · Latence très allongée Note : Insomnie sévère même à doses thérapeutiques | Hormones thyroïdiennes ●● MODÉRÉ Lévothyroxine (Synthroid) — si surdosage / hyperthyroïdie Méca. : Excès T3/T4 → hyperactivation sympathique ●● ↑ Latence S. ●● ↑ WASO ●● ↑ MPM EEG : Éveils fréquents · MPM · FC élevée sur canal cardio Note : Vérifier TSH · Non représentatif si surdosage actif |\n\nMÉDICAMENTS & SOMMEIL Impact sur l\'architecture du sommeil · Tracés PSG · Référence rapide technologue Psychotropes · Anxiolytiques & Hypnotiques · Opioïdes · Cardiovasculaires · Anticonvulsivants · Stimulants · Divers | SÉVÉRITÉ !!! CRITIQUE Impact stratégie PAP / Dx ●●● MAJEUR Architecture fortement altérée ●● MODÉRÉ Impact partiel, à documenter ● MINEUR À noter au MSTP\n\n↓ REM Sommeil paradoxal | ↑ Lat. REM Délai 1er REM | ↓ N3/SWS Sommeil lent ↓ | ↑ N3/SWS Sommeil lent ↑ | ↑ Fuseaux N2 Spindles EEG | ↑ Apn. cent. Apnées centrales | ↑ Apn. obstr. Aggrav. OSA | ↑ Latence S. Endormissement | ↑ WASO Fragmentation | ↑ MPM Mvts membres | EMG REM ↑ Act. musc. REM | Bêta EEG ↑ 14-18 Hz diffus | Alpha NREM ↑ Act. alpha | Pattern Biot Resp. ataxique | Bradypnées Fréq. resp. ↓ | TCSP Trouble comport. REM*\n\n\nRÈGLES :\n- Identifier la classe de chaque médicament\n- Mentionner les effets PSG pertinents selon le document\n- Souligner les interactions entre médicaments quand pertinentes\n- Format : 2-4 phrases cliniques concises, style note de technologue\n- Commencer par "Pharmacothérapie :"\n- Ne pas mentionner les médicaments sans effet PSG connu (ramipril, metformine, etc.)\n- Si aucun médicament n\'a d\'effet PSG → retourner "Pharmacothérapie : aucun médicament avec impact PSG significatif documenté."\n- UNIQUEMENT le paragraphe, pas de titre, pas d\'introduction';
+
+  try {
+    var response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': IA_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 400,
+        system: prompt_inter,
+        messages: [{ role: 'user', content: 'Liste des médicaments du patient :\n' + listeMeds }]
+      })
+    });
+    var data = await response.json();
+    if(response.ok && data.content && data.content[0]) {
+      analyseInterTexte = data.content[0].text.trim();
+    } else {
+      analyseInterTexte = '';
+    }
+  } catch(e) {
+    analyseInterTexte = '';
+  }
+  analyseInterEnCours = false;
+  updatePreview();
+}
+
 function buildSection_accueil() {
   var L = [], acc = [], sv = [];
   if(v('doubleId') === 'oui') acc.push('Client identifié (nom + DDN)');
@@ -2049,6 +2124,12 @@ function buildSection_accueil() {
   if(v('conditions')) L.push('Informations complémentaires : ' + v('conditions') + '.');
   L.push('');
   return L;
+}
+
+function buildSection_analyseInter() {
+  var cb = document.getElementById('analyseInterCheck');
+  if(!cb || !cb.checked || !analyseInterTexte) return [];
+  return ['── INTERACTIONS MÉDICAMENTEUSES ──', analyseInterTexte, ''];
 }
 
 function buildSection_enregistrement() {
@@ -2322,6 +2403,7 @@ function buildNote() {
   var L = [].concat(
     buildSection_entete(chambre, date, dossier, inh, etude),
     buildSection_accueil(),
+    buildSection_analyseInter(),
     buildSection_enregistrement(),
     buildSection_zopiclone(),
     buildSection_journal(),
@@ -3071,6 +3153,16 @@ function ouvrirModalIA() {
   masquerCle();
   document.getElementById('promptEditeur').value = IA_CONSIGNES;
   document.getElementById('iaModal').style.display = 'flex';
+  // Griser l'agent si pas de clé
+  var agentCb = document.getElementById('agentActif');
+  var agentLabel = agentCb ? agentCb.closest('label') : null;
+  if(agentCb) {
+    var hasKey = !!(IA_API_KEY && IA_API_KEY.trim());
+    agentCb.disabled = !hasKey;
+    if(agentLabel) agentLabel.style.opacity = hasKey ? '1' : '0.4';
+    if(agentLabel) agentLabel.style.cursor = hasKey ? 'pointer' : 'not-allowed';
+    if(agentLabel) agentLabel.title = hasKey ? '' : 'Clé API requise pour activer l’agent';
+  }
   setTimeout(function() {
     var log = document.getElementById('agentLog');
     if(log) log.scrollTop = log.scrollHeight;
@@ -3155,6 +3247,8 @@ CHAMPS DISPONIBLES ET ACTIONS :
 // PSG-SN active automatiquement le module nuit partagée
 
 MODULES ADDITIONNELS :
+{"action":"activerAnalyseInter"}     // activer l'analyse des interactions médicamenteuses
+{"action":"desactiverAnalyseInter"}   // désactiver l'analyse
 {"action":"activerModule","module":"titration"}
 {"action":"afficherModule","module":"3"}          // expand le module et ferme les autres
 {"action":"afficherModule","module":"évaluation"} // par nom — variantes acceptées:
@@ -3493,6 +3587,14 @@ function agentAppliquerAction(a) {
           label = 'Module fermé : ' + (a.module||''); ok = true;
         }
       }
+      break; }
+    case 'activerAnalyseInter': {
+      var cb = document.getElementById('analyseInterCheck');
+      if(cb && IA_API_KEY && meds.length) { cb.checked = true; toggleAnalyseInter(true); label = 'Analyse interactions : activée'; ok = true; }
+      break; }
+    case 'desactiverAnalyseInter': {
+      var cb = document.getElementById('analyseInterCheck');
+      if(cb) { cb.checked = false; toggleAnalyseInter(false); label = 'Analyse interactions : désactivée'; ok = true; }
       break; }
     case 'activerModule':
       var modId = 'mod-' + a.module;
