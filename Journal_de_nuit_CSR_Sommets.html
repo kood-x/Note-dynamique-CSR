@@ -205,7 +205,7 @@ textarea:focus::placeholder{color:transparent}
   <div style="text-align:right;min-width:120px">
     <div id="clock" style="font-size:18px;font-weight:700;letter-spacing:1px"></div>
     <div class="topbar-sub" id="dateDisplay"></div>
-    <div id="lightsOffTimer" style="display:none;font-size:11px;color:rgba(255,255,255,.75);margin-top:2px;letter-spacing:.5px"></div>
+    <div id="lightsOffTimer" style="visibility:hidden;font-size:11px;color:rgba(255,255,255,.75);margin-top:2px;letter-spacing:.5px">&nbsp;</div>
   </div>
 </div>
 
@@ -1330,11 +1330,11 @@ function updateClock() {
       var ss = diff%60;
       var str = (hh>0?hh+'h ':'')+('0'+mm).slice(-2)+'m '+('0'+ss).slice(-2)+'s';
       timerEl.textContent = '⏱ Enregistrement : '+str;
-      timerEl.style.display = 'block';
+      timerEl.style.visibility = 'visible';
     }
   } else if(timerEl) {
-    timerEl.style.display = 'none';
-    timerEl.textContent = '';
+    timerEl.style.visibility = 'hidden';
+    timerEl.textContent = '\u00a0';
   }
 }
 setInterval(updateClock,1000); updateClock();
