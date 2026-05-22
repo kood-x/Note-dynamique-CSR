@@ -160,8 +160,8 @@ select{cursor:pointer}
 .card-header.no-collapse{cursor:default}
 .card-header .collapse-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.25);border:none;color:white;width:22px;height:22px;border-radius:4px;cursor:pointer;font-size:14px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0}
 .card-header .collapse-btn:hover{background:rgba(255,255,255,.4)}
-.card-body{overflow:hidden;transition:max-height .35s cubic-bezier(.4,0,.2,1),opacity .25s ease,padding .35s ease}
-.card.collapsed .card-body{max-height:0!important;opacity:0;padding-top:0;padding-bottom:0;pointer-events:none}
+.card-body{overflow:hidden;transition:max-height .3s linear,opacity .2s linear,padding .3s linear}
+.card.collapsed .card-body{max-height:0!important;opacity:0;padding-top:0;padding-bottom:0;pointer-events:none;transition:none}
 .card.collapsed .card-header{border-radius:7px}
 .card-body{max-height:2000px;opacity:1}
 /* PLACEHOLDER atténué et disparaît au focus */
@@ -220,7 +220,7 @@ textarea:focus::placeholder{color:transparent}
      ══════════════════════════════════ -->
 <!-- ① IDENTIFICATION -->
 <div class="card" id="card-01">
-  <div class="card-header" ondblclick="focusModule(this)"">① Identification<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">−</button></div>
+  <div class="card-header"">① Identification<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">−</button></div>
   <div class="card-body">
     <div class="row c2">
       <div>
@@ -274,7 +274,7 @@ textarea:focus::placeholder{color:transparent}
 
 <!-- ② TYPE D'ÉTUDE -->
 <div class="card" id="card-02">
-  <div class="card-header" ondblclick="focusModule(this)" blue">② Type d'étude <span class="req">*</span><button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">−</button></div>
+  <div class="card-header" blue">② Type d'étude <span class="req">*</span><button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">−</button></div>
   <div class="card-body">
     <div class="etude-grid">
       <div class="module-toggle" id="etude-PSG-DX" onclick="setEtude('PSG-DX',this)"><span class="icon">🔬</span>PSG-DX</div>
@@ -295,7 +295,7 @@ textarea:focus::placeholder{color:transparent}
 
 <!-- ③ ÉVALUATION INITIALE -->
 <div class="card collapsed" id="card-03">
-  <div class="card-header" ondblclick="focusModule(this)" blue">③ Évaluation initiale<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
+  <div class="card-header" blue">③ Évaluation initiale<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
   <div class="card-body">
     <div class="row c3">
       <div><label>PA (mmHg)</label><input type="text" autocomplete="off" autocorrect="off" spellcheck="false" id="pa" class="subtle-ph" placeholder="-/-"></div>
@@ -349,7 +349,7 @@ textarea:focus::placeholder{color:transparent}
 
 <!-- ④ MONTAGE TECHNIQUE -->
 <div class="card collapsed" id="card-04">
-  <div class="card-header" ondblclick="focusModule(this)" blue">④ MONTAGE TECHNIQUE — DÉMARRAGE<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
+  <div class="card-header" blue">④ MONTAGE TECHNIQUE — DÉMARRAGE<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
   <div class="card-body">
     <div class="row c3">
       <div><label>Biocalibration</label>
@@ -408,7 +408,7 @@ textarea:focus::placeholder{color:transparent}
      ══════════════════════════════════ -->
 <!-- MODULE ZOPICLONE -->
 <div class="card cond" id="section-zopiclone">
-  <div class="card-header" ondblclick="focusModule(this)"" style="background:var(--purple)">💊 Zopiclone — OC-LAB-008<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
+  <div class="card-header"" style="background:var(--purple)">💊 Zopiclone — OC-LAB-008<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
   <div class="card-body">
     <div class="row c2">
       <div><label>Heure admin.</label><input type="time" id="zopiHeure"></div>
@@ -424,7 +424,7 @@ textarea:focus::placeholder{color:transparent}
 </div>
 <!-- ⑤ JOURNAL GÉNÉRAL -->
 <div class="card collapsed" id="card-05">
-  <div class="card-header" ondblclick="focusModule(this)" blue">⑤ Journal général — événements de nuit<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
+  <div class="card-header" blue">⑤ Journal général — événements de nuit<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
   <div class="card-body">
     <div class="chron-list" id="eventList"><div style="color:var(--muted);font-size:12px;font-style:italic;padding:4px 0">Aucun événement enregistré</div></div>
     <div class="add-form">
@@ -453,7 +453,7 @@ textarea:focus::placeholder{color:transparent}
 </div>
 <!-- MODULE NUIT PARTAGÉE -->
 <div class="card cond" id="section-sn">
-  <div class="card-header" ondblclick="focusModule(this)"" style="background:var(--green)">🔀 Nuit partagée (PSG-S/N)<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
+  <div class="card-header"" style="background:var(--green)">🔀 Nuit partagée (PSG-S/N)<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
   <div class="card-body">
     <div class="row c2">
       <div><label>Heure bascule DX→TX</label><input type="time" id="heureBascule"></div>
@@ -503,7 +503,7 @@ textarea:focus::placeholder{color:transparent}
 
 <!-- MODULE TITRATION -->
 <div class="card cond" id="section-titration">
-  <div class="card-header" ondblclick="focusModule(this)"" style="background:var(--orange)">⚙️ Titration PPC/BiPAP — OC-LAB-006<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
+  <div class="card-header"" style="background:var(--orange)">⚙️ Titration PPC/BiPAP — OC-LAB-006<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
   <div class="card-body">
     <hr class="sep">
     <div style="font-size:12px;font-weight:600;color:var(--orange);margin-bottom:8px">📈 Paliers de pression</div>
@@ -574,7 +574,7 @@ textarea:focus::placeholder{color:transparent}
 
 <!-- MODULE O2 -->
 <div class="card cond" id="section-o2">
-  <div class="card-header" ondblclick="focusModule(this)"" style="background:#6aadd4">🫁 Oxygène d'appoint — OC-LAB-007<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
+  <div class="card-header"" style="background:#6aadd4">🫁 Oxygène d'appoint — OC-LAB-007<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
   <div class="card-body">
     <hr class="sep">
     <div style="font-size:12px;font-weight:600;color:#6aadd4;margin-bottom:8px">🫁 Débits administrés</div>
@@ -619,7 +619,7 @@ textarea:focus::placeholder{color:transparent}
 
 <!-- MODULE URGENCE & MÉDICAMENTS (salbutamol + tylenol + nitro + urgence combinés) -->
 <div class="card cond" id="section-urgence-med">
-  <div class="card-header" ondblclick="focusModule(this)"" style="background:var(--red)">🚨 Urgence &amp; médicaments de secours — OC-LAB-009<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
+  <div class="card-header"" style="background:var(--red)">🚨 Urgence &amp; médicaments de secours — OC-LAB-009<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
   <div class="card-body">
     <!-- SALBUTAMOL -->
     <div style="font-size:12px;font-weight:600;color:var(--red);margin-bottom:8px">💨 Salbutamol (Ventolin)</div>
@@ -691,7 +691,7 @@ textarea:focus::placeholder{color:transparent}
 </div>
 <!-- MODULE TILE LENDEMAIN -->
 <div class="card cond" id="section-tile-suite">
-  <div class="card-header" ondblclick="focusModule(this)"" style="background:#5c6f7a">🌅 PSG précédant TILE le lendemain<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
+  <div class="card-header"" style="background:#5c6f7a">🌅 PSG précédant TILE le lendemain<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
   <div class="card-body">
     <div class="row c2">
       <div><label>Stade sommeil au réveil matinal</label>
@@ -711,7 +711,7 @@ textarea:focus::placeholder{color:transparent}
 </div>
 <!-- ⑥ FIN DE NUIT -->
 <div class="card collapsed" id="card-06">
-  <div class="card-header" ondblclick="focusModule(this)" blue">⑥ Fin de nuit et révision<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
+  <div class="card-header" blue">⑥ Fin de nuit et révision<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
   <div class="card-body">
     <div class="row c2" style="margin-bottom:10px">
       <div><label>Lights-on <span class="req">*</span></label><input type="time" id="lightsOn" oninput="updatePreview();if(this.value&&document.body.classList.contains('dark'))toggleDarkMode();"></div>
@@ -911,6 +911,11 @@ var editingO2Id = null;
 var editingMedId = null;
 var dragSrcMedId = null;
 
+function resetAnalyseInter() {
+  var cb = document.getElementById('analyseInterCheck');
+  if(cb && cb.checked) { cb.checked = false; analyseInterTexte = ''; updatePreview(); }
+}
+
 function addMed() {
   var nom = document.getElementById('medNom').value.trim();
   var dose = document.getElementById('medDose').value.trim();
@@ -931,6 +936,7 @@ function addMed() {
   document.getElementById('medNom').value = '';
   document.getElementById('medDose').value = '';
   document.getElementById('medCoucher').checked = false;
+  resetAnalyseInter();
   renderMeds(); updatePreview();
 }
 function editMed(id) {
@@ -958,7 +964,7 @@ function cancelEditMed() {
   editingMedId = null;
   renderMeds();
 }
-function deleteMed(id) { meds=meds.filter(function(m){return m.id!==id;}); renderMeds(); updatePreview(); }
+function deleteMed(id) { meds=meds.filter(function(m){return m.id!==id;}); resetAnalyseInter(); renderMeds(); updatePreview(); }
 
 // ─── BASE MÉDICAMENTS / EFFETS PSG ───
 var MED_PSG = {
@@ -1545,7 +1551,7 @@ function setOn(id,show){var e=document.getElementById(id);if(!e)return;if(show)e
 // ============================================================
 // HEURE AUTO
 // ============================================================
-function setNowTo(id){var n=new Date();document.getElementById(id).value=n.toTimeString().slice(0,5);}
+function setNowTo(id){var n=new Date();var el=document.getElementById(id);el.value=n.toTimeString().slice(0,5);el.dispatchEvent(new Event('input'));}
 
 // ============================================================
 // CHAMPS DYNAMIQUES PRESSION DE DÉPART (appareillage initial)
@@ -2055,13 +2061,13 @@ var posLabel={dorsal:'dorsale',latD:'latérale droite',latG:'latérale gauche',v
 function getNow(){var n=new Date();return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');}
 function quickLightsOff(){
   var el=document.getElementById('lightsOff');
-  if(el&&!el.value){el.value=getNow();updatePreview();}
+  if(el&&!el.value){el.value=getNow();el.dispatchEvent(new Event('input'));updatePreview();}
   var b=document.getElementById('qLightsOff');b.classList.add('qbtn-lit');
   setTimeout(function(){b.classList.remove('qbtn-lit');},800);
 }
 function quickLightsOn(){
   var el=document.getElementById('lightsOn');
-  if(el&&!el.value){el.value=getNow();updatePreview();}
+  if(el&&!el.value){el.value=getNow();el.dispatchEvent(new Event('input'));updatePreview();}
   var b=document.getElementById('qLightsOn');b.classList.add('qbtn-lit');
   setTimeout(function(){b.classList.remove('qbtn-lit');},800);
 }
@@ -2671,33 +2677,6 @@ window.addEventListener('beforeunload', function(e){
     e.returnValue = '';
   }
 });
-function focusModule(el) {
-  // Trouver la card parente
-  var card = null, node = el;
-  while(node) {
-    if(node.classList && node.classList.contains('card')) { card = node; break; }
-    node = node.parentElement;
-  }
-  if(!card) return;
-  // Replier toutes les autres cards, ouvrir celle-ci
-  document.querySelectorAll('.card').forEach(function(c) {
-    var body = c.querySelector('.card-body');
-    var btn = c.querySelector('.collapse-btn');
-    if(c === card) {
-      c.classList.remove('collapsed');
-      if(body) { body.style.maxHeight = body.scrollHeight + 'px'; setTimeout(function(){ body.style.maxHeight = '2000px'; }, 350); }
-      if(btn) btn.textContent = '−';
-      c.scrollIntoView({behavior:'smooth', block:'nearest'});
-    } else {
-      if(body) body.style.maxHeight = body.scrollHeight + 'px';
-      requestAnimationFrame(function() {
-        c.classList.add('collapsed');
-        if(btn) btn.textContent = '+';
-      });
-    }
-  });
-}
-
 function toggleCollapse(el) {
   var card = null, node = el;
   while(node) {
@@ -3860,7 +3839,7 @@ function agentAppliquerAction(a) {
     case 'addMed': {
       var prevMeds = JSON.parse(JSON.stringify(meds));
       meds.push({id:Date.now(), nom:a.nom||'', dose:a.dose||'', coucher:!!a.coucher});
-      renderMeds(); updatePreview();
+      resetAnalyseInter(); renderMeds(); updatePreview();
       label = a.nom + (a.dose?' '+a.dose:'') + (a.coucher?' (coucher)':'');
       agentSauvegarderUndo(label, function(){ meds = prevMeds; renderMeds(); updatePreview(); });
       ok = true;
@@ -4060,7 +4039,7 @@ function agentAppliquerAction(a) {
       var before = meds.length;
       var savedMeds = JSON.parse(JSON.stringify(meds));
       meds = meds.filter(function(m){ return m.nom.toLowerCase() !== (a.nom||'').toLowerCase(); });
-      if(meds.length < before) { renderMeds(); label = (a.nom||'Med') + ' supprimé';
+      if(meds.length < before) { resetAnalyseInter(); renderMeds(); label = (a.nom||'Med') + ' supprimé';
         agentSauvegarderUndo(label, function(){ meds = savedMeds; renderMeds(); updatePreview(); }); ok = true; }
       break; }
     case 'setPosition':
