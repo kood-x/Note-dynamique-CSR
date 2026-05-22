@@ -1144,7 +1144,7 @@ async function classifierMedIA(nom, medId) {
   if(!IA_API_KEY || !nom) return;
   var key = nom.toLowerCase().trim();
   if(MED_PSG_CACHE[key] !== undefined) return; // déjà en cache
-  MED_PSG_CACHE[key] = []; // marquer comme en cours
+  MED_PSG_CACHE[key] = null; // marquer comme en cours (null = en traitement)
   try {
     var response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -1162,7 +1162,7 @@ async function classifierMedIA(nom, medId) {
       })
     });
     var data = await response.json();
-    if(!response.ok) return;
+    if(!response.ok) { agentAfficherToast('⚠ Haiku erreur ' + response.status + ' : ' + (data.error&&data.error.message||'').substring(0,50)); return; }
     var raw = data.content && data.content[0] ? data.content[0].text.trim() : 'null';
     var effets;
     try {
@@ -1178,7 +1178,9 @@ async function classifierMedIA(nom, medId) {
       // Médicament inconnu — mettre en cache comme vide pour éviter re-appel
       MED_PSG_CACHE[key] = [];
     }
-  } catch(e) {}
+  } catch(e) {
+    delete MED_PSG_CACHE[key]; // libérer pour permettre une re-tentative
+  }
 }
 
 var DEFS_PSG = {
@@ -1328,7 +1330,7 @@ function updateClock() {
       var hh = Math.floor(diff/3600);
       var mm = Math.floor((diff%3600)/60);
       var ss = diff%60;
-      var str = (hh>0?hh+'h ':'')+('0'+mm).slice(-2)+'m '+('0'+ss).slice(-2)+'s';
+      var str = (hh>0?hh+'h ':'')+('0'+mm).slice(-2)+'m';
       timerEl.textContent = '⏱ Enregistrement : '+str;
       timerEl.style.visibility = 'visible';
     }
