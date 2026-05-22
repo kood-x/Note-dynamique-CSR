@@ -75,6 +75,7 @@ textarea{resize:vertical;min-height:60px}
 @keyframes sparkle{0%,100%{transform:scale(1) rotate(0deg);opacity:1}25%{transform:scale(1.4) rotate(-15deg);opacity:.9}50%{transform:scale(1.1) rotate(10deg);opacity:1}75%{transform:scale(1.3) rotate(-8deg);opacity:.85}}
 @keyframes sparkleIdle{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:.85}}
 
+.med-reload{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 3px;transition:color .15s}.med-reload:hover{color:var(--blue)}
 .chron-item{transition:transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .18s ease}
 .chron-item:hover{transform:translateY(-2px) scale(1.012);box-shadow:0 6px 18px rgba(31,56,100,.13);z-index:2;position:relative}
 .med-item.dragging{opacity:.4;border:2px dashed var(--blue)!important;background:var(--gray)!important}
@@ -1128,6 +1129,12 @@ function getMedPSG(nom) {
   return [];
 }
 
+function reloadMedIA(nom) {
+  var key = nom.toLowerCase().trim();
+  delete MED_PSG_CACHE[key];
+  classifierMedIA(nom);
+}
+
 function getMedSeverite(effets) {
   if(!effets || !effets.length) return '';
   // trim() sur chaque effet pour éviter les espaces parasites de Haiku
@@ -1162,7 +1169,7 @@ async function classifierMedIA(nom, medId) {
       })
     });
     var data = await response.json();
-    if(!response.ok) { agentAfficherToast('⚠ Haiku erreur ' + response.status + ' : ' + (data.error&&data.error.message||'').substring(0,50)); return; }
+    if(!response.ok) { if(response.status!==401&&response.status!==404){MED_PSG_CACHE[key]='ERROR';renderMeds();} return; }
     var raw = data.content && data.content[0] ? data.content[0].text.trim() : 'null';
     var effets;
     try {
@@ -1250,7 +1257,17 @@ function renderMeds() {
           }).join(' ')
         + '</span>';
     } else {
-      effetsHtml = '<span style="font-size:10px;color:var(--border)">—</span>';
+      var ck = (m.nom||'').toLowerCase().trim();
+      if(MED_PSG_CACHE[ck] === 'ERROR') {
+        effetsHtml = '<span style="font-size:10px;color:var(--muted)">—</span> <button class="med-reload" onclick="event.stopPropagation();reloadMedIA(this.dataset.nom)" data-nom="' + m.nom.replace(/"/g,'&quot;') + '" title="R\u00e9essayer">\u21bb</button>';
+      } else {
+        var ck = (m.nom||'').toLowerCase().trim();
+        if(MED_PSG_CACHE[ck] === 'ERROR') {
+          effetsHtml = '<span style="font-size:10px;color:var(--muted)">—</span> <button class="med-reload" onclick="event.stopPropagation();reloadMedIA(this.dataset.nom)" data-nom="' + m.nom.replace(/"/g,'&quot;') + '" title="Réessayer">↻</button>';
+        } else {
+          effetsHtml = '<span style="font-size:10px;color:var(--border)">—</span>';
+        }
+      }
     }
     var label = '<span style="font-weight:600">' + m.nom + '</span>'
       + (m.dose ? '<span style="color:var(--muted);font-size:11px"> ' + m.dose + '</span>' : '')
@@ -1459,19 +1476,6 @@ initCollapseHeaders();
 /* ─── CALCUL IMC ─── */
 // // ============================================================
 function calcIMC() {
-  var poids=parseFloat(document.getElementById('poids').value);
-  var taille=parseFloat(document.getElementById('taille').value);
-  var el=document.getElementById('imcDisplay');
-  if(!poids||!taille||taille<100){el.innerHTML='<span style="color:var(--muted)">— entrer poids et taille</span>';updatePreview();return;}
-  var tm=taille/100, imc=poids/(tm*tm), s=imc.toFixed(1);
-  var cat,color,bg;
-  if(imc<18.5){cat='insuffisance pondérale';color='#5b7fa6';bg='#e6f1fb';}
-  else if(imc<25){cat='poids normal';color='var(--green)';bg='#eaf5ee';}
-  else if(imc<30){cat='surpoids';color='var(--orange)';bg='#fff4e6';}
-  else if(imc<35){cat='obésité classe I';color='#c96a00';bg='#fdeaea';}
-  else if(imc<40){cat='obésité classe II';color='var(--red)';bg='#fdeaea';}
-  else{cat='obésité classe III (morbide)';color='var(--red)';bg='#fdeaea';}
-  el.innerHTML='<span class="imc-badge" style="background:'+bg+';color:'+color+'">IMC '+s+' kg/m\u00b2 — '+cat+'</span>';
   updatePreview();
 }
 
@@ -3672,7 +3676,7 @@ async function agentExecuter(texte) {
       })
     });
     var data = await response.json();
-    if(!response.ok) return;
+    if(!response.ok) { if(response.status!==401&&response.status!==404){MED_PSG_CACHE[key]='ERROR';renderMeds();} return; }
     var raw = data.content && data.content[0] ? data.content[0].text : '[]';
     var actions;
     try { actions = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
@@ -3680,7 +3684,7 @@ async function agentExecuter(texte) {
     if(Array.isArray(actions)) {
       actions.forEach(function(a){ agentAppliquerAction(a); });
     }
-  } catch(e) {}
+  } catch(e) { MED_PSG_CACHE[key]='ERROR'; renderMeds(); }
 }
 
 function agentAppliquerAction(a) {
@@ -3853,13 +3857,14 @@ function agentAppliquerAction(a) {
     case 'setConditions':
       if(setField('conditions', a.valeur)) { label = 'Conditions : ' + a.valeur.substring(0,40); ok = true; }
       break;
-    case 'addMed':
-      setField('medNom', a.nom); setField('medDose', a.dose || '');
-      var cb = document.getElementById('medCoucher'); if(cb) cb.checked = !!a.coucher;
+    case 'addMed': {
       var prevMeds = JSON.parse(JSON.stringify(meds));
-      addMed(); label = a.nom + (a.dose?' '+a.dose:'') + (a.coucher?' (coucher)':'');
-      agentSauvegarderUndo(label, function(){ meds = prevMeds; renderMeds(); updatePreview(); }); ok = true;
-      break;
+      meds.push({id:Date.now(), nom:a.nom||'', dose:a.dose||'', coucher:!!a.coucher});
+      renderMeds(); updatePreview();
+      label = a.nom + (a.dose?' '+a.dose:'') + (a.coucher?' (coucher)':'');
+      agentSauvegarderUndo(label, function(){ meds = prevMeds; renderMeds(); updatePreview(); });
+      ok = true;
+      break; }
     case 'setZopiclone':
     case 'setZopiHeure':
       if(a.heure) { if(!modulesActifs['zopiclone']){var bz=document.getElementById('mod-zopiclone');if(bz)bz.click();} setField('zopiHeure', a.heure); label = 'Zopiclone heure : ' + a.heure; ok = true; }
