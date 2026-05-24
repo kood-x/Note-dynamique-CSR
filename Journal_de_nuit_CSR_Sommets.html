@@ -259,8 +259,14 @@ textarea:focus::placeholder{color:transparent}
         </select>
       </div>
       <div>
-        <label>No dossier client</label>
-        <input type="text" autocomplete="off" autocorrect="off" spellcheck="false" id="dossier" class="subtle-ph" placeholder="-">
+        <label>No dossier client — Sexe</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="text" autocomplete="off" autocorrect="off" spellcheck="false" id="dossier" class="subtle-ph" placeholder="-" style="flex:1">
+          <select id="sexePatient" onchange="updatePreview()" style="width:52px;padding:6px 4px;font-size:13px;border:1px solid var(--border);border-radius:4px;background:var(--white);color:var(--text);cursor:pointer">
+            <option value="M">M</option>
+            <option value="F">F</option>
+          </select>
+        </div>
       </div>
     </div>
     <div class="row c2">
@@ -328,7 +334,7 @@ textarea:focus::placeholder{color:transparent}
 
       <div style="background:var(--gray);border:1px solid var(--border);border-radius:6px;padding:10px">
         <div class="row c2" style="margin-bottom:6px">
-          <div><label>Médicament</label><input type="text" autocomplete="off" autocorrect="off" spellcheck="false" id="medNom" placeholder="Ex: ramipril"></div>
+          <div><label>Médicament</label><input type="text" autocomplete="off" autocorrect="off" spellcheck="false" id="medNom" placeholder="Ex: ramipril" onkeydown="if(event.key==='Enter')addMed()"></div>
           <div><label>Dose / fréquence</label><input type="text" autocomplete="off" autocorrect="off" spellcheck="false" id="medDose" placeholder="Ex: 10 mg die" onkeydown="if(event.key==='Enter')addMed()"></div>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between">
@@ -429,7 +435,7 @@ textarea:focus::placeholder{color:transparent}
     <div class="chron-list" id="eventList"><div style="color:var(--muted);font-size:12px;font-style:italic;padding:4px 0">Aucun événement enregistré</div></div>
     <div class="add-form">
       <div class="row c2" style="margin-bottom:6px">
-        <div><label>Heure <span class="time-now" onclick="setNowTo('newEventTime')">→ maintenant</span></label><input type="time" id="newEventTime"></div>
+        <div><label>Heure <span class="time-now" onclick="setNowTo('newEventTime')">→ maintenant</span></label><input type="time" id="newEventTime" onkeydown="if(event.key==='Enter')addEvent()"></div>
         <div><label>Catégorie</label>
           <select id="newEventCat">
             <option>Réveil client</option><option>Toilettes</option><option>Repositionnement</option>
@@ -510,7 +516,7 @@ textarea:focus::placeholder{color:transparent}
     <div class="chron-list" id="palierList"><div style="color:var(--muted);font-size:12px;font-style:italic">Aucun palier — utilisez le formulaire ci-dessous</div></div>
     <div class="add-form">
       <div class="row c3" style="margin-bottom:6px">
-        <div><label>Heure <span class="time-now" onclick="setNowTo('palierTime')">→ maintenant</span></label><input type="time" id="palierTime"></div>
+        <div><label>Heure <span class="time-now" onclick="setNowTo('palierTime')">→ maintenant</span></label><input type="time" id="palierTime" onkeydown="if(event.key==='Enter')addPalier()"></div>
         <div><label>Mode</label>
           <select id="palierMode" onchange="updatePalierFields()">
             <option value="CPAP">CPAP</option><option value="BiPAP">BiPAP</option><option value="BiPAP-ST">BiPAP-ST</option>
@@ -543,7 +549,7 @@ textarea:focus::placeholder{color:transparent}
     <div class="chron-list" id="masqueList"><div style="color:var(--muted);font-size:12px;font-style:italic">Aucun changement enregistré</div></div>
     <div class="add-form">
       <div class="row c2" style="margin-bottom:6px">
-        <div><label>Heure <span class="time-now" onclick="setNowTo('masqueChTime')">→ maintenant</span></label><input type="time" id="masqueChTime"></div>
+        <div><label>Heure <span class="time-now" onclick="setNowTo('masqueChTime')">→ maintenant</span></label><input type="time" id="masqueChTime" onkeydown="if(event.key==='Enter')addMasqueChange()"></div>
         <div><label>Type d'équipement</label>
           <select id="masqueChEquip" onchange="updateMasqueFields()">
             <option value="masque">Masque</option>
@@ -581,7 +587,7 @@ textarea:focus::placeholder{color:transparent}
     <div id="o2List"><div style="color:var(--muted);font-size:12px;font-style:italic">Aucun débit enregistré</div></div>
     <div class="add-form" style="margin-top:8px">
       <div class="row c3" style="margin-bottom:6px">
-        <div><label>Heure <span class="time-now" onclick="setNowTo('o2Time')">→ maintenant</span></label><input type="time" id="o2Time"></div>
+        <div><label>Heure <span class="time-now" onclick="setNowTo('o2Time')">→ maintenant</span></label><input type="time" id="o2Time" onkeydown="if(event.key==='Enter')addO2()"></div>
         <div><label>Débit (L/min)</label>
           <select id="o2Debit">
             <option value="">—</option>
@@ -716,7 +722,7 @@ textarea:focus::placeholder{color:transparent}
     <div class="row c2" style="margin-bottom:10px">
       <div><label>Lights-on <span class="req">*</span></label><input type="time" id="lightsOn" oninput="updatePreview();if(this.value&&document.body.classList.contains('dark'))toggleDarkMode();"></div>
       <div><label>Questionnaire nuit (client)</label>
-        <select id="questNuit"><option value="complété">✓ Complété</option><option value="refusé par le client">Refusé par le client</option><option value="non-rempli">Non-rempli</option></select></div>
+        <select id="questNuit"><option value="complété">✓ Complété</option><option value="refus du client">Refusé par le client</option><option value="non-rempli">Non-rempli</option></select></div>
     </div>
     <div style="margin-bottom:10px"><label>Commentaires de révision / impressions / suggestions <span style="font-size:9px;font-weight:600;color:#2e75b6;background:#e3f2fd;border-radius:3px;padding:1px 5px;margin-left:6px;letter-spacing:0.3px;vertical-align:middle">dictée</span></label>
       <textarea autocomplete="off" autocorrect="off" spellcheck="false" id="commentairesFin" rows="4" style="resize:vertical" placeholder="Ex: longue latence à l'endormissement, cycles culminant en REM, SWS en début de nuit, ronflement résiduel en décubitus dorsal, qualité de sommeil subjective médiocre selon questionnaire"></textarea></div>
@@ -753,9 +759,8 @@ textarea:focus::placeholder{color:transparent}
 </div>
 <!-- BARRE D'ACTIONS FIXE -->
 <div id="actionBar" style="background:var(--white);border-top:2px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-shrink:0">
-  <button class="btn btn-outline" onclick="resetAll()" style="font-size:12px">🔄 Réinitialiser</button>
+  <button class="btn btn-ia" onclick="ouvrirModalIA()" style="font-size:12px">🤖 IA</button>
   <div style="display:flex;gap:8px;align-items:center">
-    <button class="btn btn-ia" onclick="ouvrirModalIA()" style="font-size:12px">🤖 IA</button>
     <button class="btn" onclick="exporterHTML()" style="background:var(--navy);color:white;font-size:12px">💾 Exporter</button>
     <button class="btn btn-green" onclick="genererNote()" style="padding:10px 20px;font-size:14px">✓ Éditer la note</button>
   </div>
@@ -799,6 +804,7 @@ textarea:focus::placeholder{color:transparent}
           <button class="btn btn-outline btn-sm" onclick="effacerApiKey()" title="Effacer la clé">🗑</button>
         </div>
         <div id="apiKeyStatus" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
+
       </div>
       <!-- Agent conversationnel -->
       <div style="padding:14px 20px;border-bottom:1px solid var(--border)">
@@ -964,7 +970,7 @@ function cancelEditMed() {
   editingMedId = null;
   renderMeds();
 }
-function deleteMed(id) { meds=meds.filter(function(m){return m.id!==id;}); resetAnalyseInter(); renderMeds(); updatePreview(); }
+function deleteMed(id) { meds=meds.filter(function(m){return m.id!==id;}); if(editingMedId===id){cancelEditMed();} resetAnalyseInter(); renderMeds(); updatePreview(); }
 
 // ─── BASE MÉDICAMENTS / EFFETS PSG ───
 var MED_PSG = {
@@ -1170,12 +1176,16 @@ async function classifierMedIA(nom, medId) {
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 150,
-        system: 'Tu es un expert en pharmacologie du sommeil PSG pour CSR Sommets. Tu utilises EXCLUSIVEMENT la nomenclature et les codes visuels du document de référence BCM-001 ci-dessous.\n\n=== DOCUMENT DE RÉFÉRENCE BCM-001 ===\nPSYCHOTROPES\nISRS ●●● MAJEUR Fluoxétine · Sertraline · Escitalopram · Paroxétine Méca. : ↑ Sérotonine → inhibe noyaux REM pontins ●●● ↓ REM ●●● ↑ Lat. REM ●● ↑ WASO ●● Masquage TCSP EEG : Latence REM > 90 min · Mvts oculaires en NREM · Staging REM difficile Note : Suppression REM peut masquer un TCSP | IRSN ●●● MAJEUR Venlafaxine (Effexor) · Duloxétine (Cymbalta) Méca. : Double inhibition 5-HT+NA → suppression REM > ISRS ●●● ↓ REM ●●● ↑ Lat. REM ●● ↑ WASO ●● Masquage TCSP EEG : Profil identique ISRS · Latence REM très allongée | Tricycliques (TCA) ●● MODÉRÉ Amitriptyline (Elavil) · Nortriptyline · Imipramine Méca. : Anti-H1 + anticholinergique → sédation + ↓ REM ●● ↓ REM ●● ↑ Lat. REM ●● ↑ N3/SWS EEG : N3 augmenté · REM réduit · Sédation prononcée au tracé | Trazodone ● MINEUR Desyrel Méca. : Antagoniste 5-HT2A → ↑ N3 sans supprimer le REM ● ↑ N3/SWS EEG : N3 favorisé · Architecture préservée · REM peu affecté Note : Profil le plus favorable parmi les AD en PSG\nMirtazapine ●● MODÉRÉ Remeron Méca. : Antagoniste α2+H1 → forte sédation + prise de poids ●● ↑ N3/SWS ●● ↑ Apn. obstr. EEG : N3 augmenté · TST long · IAH ↑ si poids récent Note : Surveiller IAH si gain pondéral — prise de poids aggrave OSA | Bupropion ●● MODÉRÉ Wellbutrin · Zyban Méca. : Inhibiteur DA+NA → activant · seul AD sans ↓ REM ●● ↑ Latence S. ●● ↑ WASO ●● Alpha NREM ↑ EEG : Alpha persistant début nuit · Latence allongée · REM INTACT Note : Seul AD qui préserve le REM | Antipsychotiques atypiques ●● MODÉRÉ Quétiapine (Seroquel) · Olanzapine · Rispéridone Méca. : Anti-H1 + antagoniste D2 → sédation + prise de poids ●● ↑ N3/SWS ●● ↑ Apn. obstr. ● ↑ MPM EEG : N3 augmenté · TST long · MPM possibles Note : Prise de poids → OSA aggravée · Surveiller IAH | Antipsychotiques typiques ●● MODÉRÉ Halopéridol (Haldol) · Chlorpromazine Méca. : Blocage D2 → akathisie/dyskinésies → fragmentation ●● ↑ MPM ●● ↑ WASO EEG : MPM fréquents et bien visibles · Fragmentation nocturne\nANXIOLYTIQUES & HYPNOTIQUES\nBenzodiazépines !!! CRITIQUE Clonazépam (Rivotril) · Lorazépam (Ativan) · Diazépam · Témazépam Méca. : Agoniste GABA-A → ↓ ondes lentes + relaxation VAS ●● ↓ REM ●●● ↓ N3/SWS ●●● ↑ Fuseaux N2 ●●● ↑ Apn. obstr. ●●● Bêta EEG ↑ EEG : Fuseaux N2 très denses · N3 quasi absent · Bêta 14-18 Hz · Staging N2/N3 ambigu Note : Relaxation musculaire VAS → aggravation OSA documentée | Z-drugs ●● MODÉRÉ Zopiclone (Imovane) · Zolpidem Méca. : Agoniste GABA-A sélectif α1 — profil respiratoire ≠ BZD ● ↓ N3/SWS ● ↑ Fuseaux N2 EEG : Fuseaux N2 légèrement ↑ · N3 modestement réduit · Parasomnies NREM possibles Note : Méta-analyse 2024 : pas d\'aggravation IAH vs placebo | Mélatonine ● MINEUR Circadin · Slenyto · vente libre Méca. : Agoniste MT1/MT2 → synchronisation circadienne Aucun impact PSG significatif EEG : Impact minimal · Architecture et REM préservés Note : Prescrit pour compenser ↓ mélatonine par bêtabloquants\nOPIOÏDES & ANALGÉSIQUES\nOpioïdes (usage chronique) !!! CRITIQUE Morphine · Oxycodone · Hydromorphone · Méthadone · Codéine Méca. : Agoniste µ → dépression tronc cérébral + centres resp. !!! ↓ REM ●●● ↓ N3/SWS !!! ↑ Apn. cent. ●● ↑ Apn. obstr. ●●● ↑ WASO !!! Pattern Biot ●● Bradypnées EEG : Apnées centrales en salves · Pattern Biot au canal flux · REM quasi absent · Bradypnées Note : ~30% des patients sous méthadone ont apnées centrales · Envisager ASV | Tramadol ●● MODÉRÉ Tramacet · Ultram · Tridural Méca. : Opioïde atypique + inhibiteur recapture 5-HT/NA ●● ↓ REM ●● ↑ Apn. cent. ● ↑ WASO EEG : Apnées centrales isolées · Surveiller canal flux\nCARDIOVASCULAIRES\nBêtabloquants liposolubles ●● MODÉRÉ Métoprolol (Lopressor) · Propranolol (Inderal) · Carvédilol Méca. : Blocage β1 pinéal → mélatonine endogène ↓ 50-80% ●● ↓ REM ●● ↑ Latence S. ●● ↑ WASO EEG : Latence allongée · REM réduit et tardif · Réveils fréquents Note : Supplément mélatonine souvent recommandé si insomnie | Clonidine ●● MODÉRÉ Catapres Méca. : Agoniste α2 → ↓ noradrénaline → ↓↓ REM dose-dépendant ●● ↓ REM ●●● ↑ Lat. REM ● ↑ Latence S. EEG : Latence REM très allongée · ↓ REM marqué · ↑ N2 · Effet hypnotique au tracé Note : À dose thérapeutique : REM réduit de ~40% vs baseline | Amiodarone ●● MODÉRÉ Cordarone Méca. : Effets CNS complexes → insomnie chez 3-40% des patients ●● ↑ Latence S. ●● ↑ WASO EEG : Éveils fréquents · Latence allongée · Cauchemars possibles Note : Effets CNS incluant insomnie rapportés dans la monographie du produit | Digoxine ●● MODÉRÉ Lanoxin Méca. : Aux taux plasmatiques élevés → effets CNS incluant insomnie ●● ↑ Latence S. ●● ↑ WASO EEG : Éveils fréquents · Cauchemars aux concentrations toxiques · Vérifier taux sérique Note : Impact PSG proportionnel aux taux plasmatiques — noter si taux récent disponible\nANTICONVULSIVANTS\nGabapentin / Prégabalin ●● MODÉRÉ Gabapentine (Neurontin) · Prégabaline (Lyrica) Méca. : Bloque canaux Ca²⁺ α2δ → ↑ N3 significatif ●●● ↑ N3/SWS ● ↓ REM EEG : N3 très augmenté · Staging N3 peut paraître anormal | Carbamazépine ●● MODÉRÉ Tégrétol · Carbatrol Méca. : Stabilisation canaux Na⁺ → ↓ activité neuronale ●● ↓ REM ●● ↓ N3/SWS ● ↑ WASO EEG : REM et N3 réduits · Pointes-ondes intercritiques possibles Note : Activité épileptiforme → interrompre et aviser le médecin | Valproate ● MINEUR Épival · Dépakene Méca. : GABAergique + Na⁺ → effet minimal sur architecture ● ↓ REM ● ↑ Apn. obstr. EEG : Tracé peu modifié · REM légèrement réduit | Lithium ●● MODÉRÉ Lithane · Carbolith Méca. : Modulation inositol → ↑ SWS + MPM possibles ●● ↑ N3/SWS ●● ↑ MPM EEG : N3 augmenté · MPM bien visibles\nSTIMULANTS & TDAH\nMéthylphénidate ●●● MAJEUR Ritalin · Concerta · Biphentin · Foquest Méca. : Inhibiteur recapture DA+NA → hyperactivité monoaminergique ●● ↓ REM ●● ↑ Lat. REM ●●● ↑ Latence S. ●● ↑ WASO ●● Alpha NREM ↑ EEG : Latence très allongée · Alpha persistant · REM tardif Note : Peut masquer narcolepsie · Prise < 6h avant coucher = résultats non représentatifs | Amphétamines / Lisdex. ●●● MAJEUR Vyvanse · Adderall XR · Dexédrine Méca. : Libération massive DA+NA → effets > méthylphénidate ●● ↓ REM ●● ↑ Lat. REM ●●● ↑ Latence S. ●●● ↑ WASO EEG : Latence extrême · Tracé très fragmenté · REM minimal Note : Demi-vie longue → impact nocturne même si prise matinale | Modafinil / Armodafinil ●● MODÉRÉ Alertec · Nuvigil Méca. : Inhibition recapture DA · Moins activant que amphétamines ●● ↑ Latence S. ● Alpha NREM ↑ EEG : Alpha augmenté · Latence allongée si prise tardive\nDIVERS\nAlcool !!! CRITIQUE Toutes formes — documenter si consommation le soir de l\'étude Méca. : GABAergique → ↑ N3 1re moitié · rebond REM 2e moitié ●● ↓ REM ●● ↑ N3/SWS ●●● ↑ Apn. obstr. ●●● ↑ WASO EEG : N3 dominant 1re partie · Rebond REM brutal 2e partie · OSA aggravée Note : Non représentatif si > 2 verres · Documenter dans le rapport | Cannabis (chronique) ●● MODÉRÉ THC · cannabinoïdes (usage quotidien) Méca. : Agoniste CB1 → ↓ REM · usage chronique → ↑ WASO ●● ↓ REM ●● ↑ WASO EEG : REM réduit · WASO augmenté en 2e moitié de nuit | Antihistaminiques 1re gén. ●● MODÉRÉ Diphénhydramine (Benadryl/Nytol) · Doxylamine (Gravol) Méca. : Anti-H1 + anticholinergique → sédation superficielle ●● ↑ MPM ●● ↑ WASO EEG : MPM visibles · Architecture fragmentée 2e partie | Inhibiteurs cholinestérase ●●● MAJEUR Donépézil (Aricept) · Rivastigmine (Exelon) Méca. : Inhibition AChE → ↑ ACh → activation REM + musculaire ●●● EMG REM ↑ ●● ↑ WASO ●●● Masquage TCSP EEG : EMG en REM notable · Peut simuler ou révéler un TCSP Note : Peut créer faux TCSP · Confirmer diagnostic sans médication\nCorticostéroïdes oraux ●●● MAJEUR Prednisone · Prednisolone · Dexaméthasone Méca. : ↓ sérotonine raphé → perturbation circadienne ●●● ↓ REM ●● ↑ Latence S. ●●● ↑ WASO EEG : REM fortement réduit · Éveils très fréquents Note : Impact documenté même après quelques jours de traitement | Théophylline ●●● MAJEUR Théo-Dur · Uniphyl · Aminophylline Méca. : Inhibition phosphodiestérase → AMPc ↑ → stimulation SNC ●●● ↑ Latence S. ●●● ↑ WASO ●● Alpha NREM ↑ EEG : Alpha persistant toute la nuit · Latence très allongée Note : Insomnie sévère même à doses thérapeutiques | Hormones thyroïdiennes ●● MODÉRÉ Lévothyroxine (Synthroid) — si surdosage / hyperthyroïdie Méca. : Excès T3/T4 → hyperactivation sympathique ●● ↑ Latence S. ●● ↑ WASO ●● ↑ MPM EEG : Éveils fréquents · MPM · FC élevée sur canal cardio Note : Vérifier TSH · Non représentatif si surdosage actif |\nMÉDICAMENTS & SOMMEIL Impact sur l\'architecture du sommeil · Tracés PSG · Référence rapide technologue Psychotropes · Anxiolytiques & Hypnotiques · Opioïdes · Cardiovasculaires · Anticonvulsivants · Stimulants · Divers | SÉVÉRITÉ !!! CRITIQUE Impact stratégie PAP / Dx ●●● MAJEUR Architecture fortement altérée ●● MODÉRÉ Impact partiel, à documenter ● MINEUR À noter au MSTP\n↓ REM Sommeil paradoxal | ↑ Lat. REM Délai 1er REM | ↓ N3/SWS Sommeil lent ↓ | ↑ N3/SWS Sommeil lent ↑ | ↑ Fuseaux N2 Spindles EEG | ↑ Apn. cent. Apnées centrales | ↑ Apn. obstr. Aggrav. OSA | ↑ Latence S. Endormissement | ↑ WASO Fragmentation | ↑ MPM Mvts membres | EMG REM ↑ Act. musc. REM | Bêta EEG ↑ 14-18 Hz diffus | Alpha NREM ↑ Act. alpha | Pattern Biot Resp. ataxique | Bradypnées Fréq. resp. ↓ | TCSP Trouble comport. REM\n=== FIN DU DOCUMENT ===\n\nEFFETS PSG — libellés exacts à utiliser :\n↓ REM, ↑ Lat.REM, ↓ N3/SWS, ↑ N3/SWS, ↑ Fuseaux N2, ↑ Apn.cent., ↑ Apn.obstr., ↑ Lat.S., ↑ WASO, ↑ MPM, EMG REM ↑, Bêta EEG ↑, Alpha NREM ↑, Pattern Biot, Bradypnées, Masquage TCSP\n\nRÈGLES :\n- Identifier la classe du médicament et consulter le document\n- Si le médicament ou sa classe est dans le document → utiliser exactement ses effets et niveaux de sévérité\n- Si non trouvé dans le document → appliquer tes connaissances générales AVEC la même nomenclature\n- Retourner UNIQUEMENT un tableau JSON ex: [\'●●● ↓ REM\',\'●● ↑ WASO\']\n- Sans effet PSG connu (ramipril, metformine, statines basiques) → []\n- Médicament totalement inconnu → null\n- Jamais de texte avant ou après le tableau JSON',
+        system: 'Tu es un expert en pharmacologie du sommeil PSG. Pour le médicament donné, retourne UNIQUEMENT un tableau JSON d\'effets PSG.\n\nNIVEAUX DE SÉVÉRITÉ (préfixe obligatoire) :\n!!! CRITIQUE | ●●● MAJEUR | ●● MODÉRÉ | ● MINEUR\n\nEFFETS POSSIBLES (utiliser EXACTEMENT ces libellés) :\n↓ REM, ↑ Lat.REM, ↓ N3/SWS, ↑ N3/SWS, ↑ Fuseaux N2, ↑ Apn.cent., ↑ Apn.obstr., ↑ Poids→OSA, ↑ Lat.S., ↑ WASO, ↑ MPM, EMG REM ↑, Bêta EEG ↑, Alpha NREM ↑, Pattern Biot, Bradypnées, Masquage TCSP\n\nEXEMPLES CLÉS :\n- ISRS/IRSN (sertraline, venlafaxine) : [\"●●● ↓ REM\",\"●●● ↑ Lat.REM\",\"●● ↑ WASO\",\"●● Masquage TCSP\"]\n- Mirtazapine/Reméron : [\"●● ↑ N3/SWS\",\"●● ↑ Poids→OSA\"] // OSA via prise de poids, pas relaxation directe\n- Antipsychotiques atypiques (quétiapine, olanzapine) : [\"●● ↑ N3/SWS\",\"●● ↑ Poids→OSA\",\"● ↑ MPM\"]\n- Benzodiazépines (clonazépam, lorazépam) : [\"●● ↓ REM\",\"●●● ↓ N3/SWS\",\"●●● ↑ Fuseaux N2\",\"●●● ↑ Apn.obstr.\",\"●●● Bêta EEG ↑\"]\n- Z-drugs (zopiclone, zolpidem) : [\"● ↓ N3/SWS\",\"● ↑ Fuseaux N2\"]\n- Opioïdes chroniques (morphine, méthadone) : [\"!!! ↓ REM\",\"●●● ↓ N3/SWS\",\"!!! ↑ Apn.cent.\",\"!!! Pattern Biot\"]\n- Tramadol : [\"●● ↓ REM\",\"●● ↑ Apn.cent.\",\"● ↑ WASO\"]\n- Bêta-bloquants liposolubles (métoprolol, propranolol) : [\"●● ↓ REM\",\"●● ↑ Lat.S.\",\"●● ↑ WASO\"]\n- Gabapentine/Prégabaline : [\"●●● ↑ N3/SWS\",\"● ↓ REM\"]\n- Stimulants (méthylphénidate, amphet.) : [\"●● ↓ REM\",\"●●● ↑ Lat.S.\",\"●●● ↑ WASO\",\"●● Alpha NREM ↑\"]\n- Inhibiteurs cholinestérase (donépézil) : [\"●●● EMG REM ↑\",\"●● ↑ WASO\",\"●●● Masquage TCSP\"]\n- Corticostéroïdes (prednisone) : [\"●●● ↓ REM\",\"●● ↑ Lat.S.\",\"●●● ↑ WASO\"]\n- Antagonistes orexine (daridorexant/Quviviq, suvorexant) : [\"●●● ↑ WASO\",\"●● ↓ Lat.S.\",\"● ↑ N3/SWS\"]\n- Sans effet PSG connu (ramipril, metformine, statines, pantoprazole) : []\n\nRÈGLES :\n- Retourner UNIQUEMENT le tableau JSON, rien d\'autre\n- Utiliser EXACTEMENT les libellés ci-dessus\n- Médicament inconnu : null',
         messages: [{ role: 'user', content: 'Médicament : ' + nom }]
       })
     });
     var data = await response.json();
-    if(!response.ok) { if(response.status!==401&&response.status!==404){MED_PSG_CACHE[key]='ERROR';renderMeds();} return; }
+    if(!response.ok) {
+      if(response.status!==401&&response.status!==404){
+        MED_PSG_CACHE[key]='ERROR'; renderMeds();
+        agentAjouterLog(response.status===529?'⚠ Haiku — surchargé (529)':'⚠ Haiku — erreur '+response.status);
+      } return; }
     var raw = data.content && data.content[0] ? data.content[0].text.trim() : 'null';
     var effets;
     try {
@@ -1186,6 +1196,12 @@ async function classifierMedIA(nom, medId) {
       effets = effets.map(function(e){ return (e||'').trim(); }).filter(Boolean);
       MED_PSG_CACHE[key] = effets;
       MED_PSG[key] = effets;
+      // Persister dans localStorage pour les prochaines sessions
+      try {
+        var stored = JSON.parse(localStorage.getItem('csr_med_psg_cache') || '{}');
+        stored[key] = effets;
+        localStorage.setItem('csr_med_psg_cache', JSON.stringify(stored));
+      } catch(e) {}
       renderMeds();
     } else if(effets === null) {
       // Médicament inconnu — mettre en cache comme vide pour éviter re-appel
@@ -1441,7 +1457,7 @@ initCollapseHeaders();
     if(S.masqueChanges)  masqueChanges  = S.masqueChanges;
     if(S.o2Events)       o2Events       = S.o2Events;
     if(S.meds)           meds           = S.meds;
-    if(S.apiKey) { IA_API_KEY = S.apiKey; }
+    // La clé API reste dans localStorage uniquement — jamais dans le state exporté
     if(S.memo!=null)    { var mt=document.getElementById('memoText'); if(mt) mt.value=S.memo; }
     // Restaurer UI
     if(S.chambreActive){
@@ -1924,7 +1940,7 @@ function addO2(){
 }
 function deleteO2(id){
   o2Events=o2Events.filter(function(o){return o.id!==id;});
-  if(editingO2Id===id){editingO2Id=null;setO2EditMode(false);}
+  if(editingO2Id===id){cancelEditO2();}
   o2Offset=Math.max(0,Math.min(o2Offset,Math.max(0,o2Events.length-4)));
   renderO2();updatePreview();
 }
@@ -2177,6 +2193,10 @@ async function genererAnalyseInter() {
       })
     });
     var data = await response.json();
+    if(!response.ok) {
+      agentAjouterLog(response.status===529?'\u26a0 Sonnet \u2014 surcharg\u00e9 (529)':response.status===429?'\u26a0 Sonnet \u2014 quota d\u00e9pass\u00e9 (429)':response.status===401?'\u26a0 Sonnet \u2014 cl\u00e9 invalide (401)':'\u26a0 Sonnet \u2014 erreur '+response.status);
+      analyseInterEnCours=false; updatePreview(); return;
+    }
     if(response.ok && data.content && data.content[0]) {
       analyseInterTexte = data.content[0].text.trim();
     } else {
@@ -2184,6 +2204,7 @@ async function genererAnalyseInter() {
     }
   } catch(e) {
     analyseInterTexte = '';
+    agentAjouterLog('\u26a0 Sonnet \u2014 erreur analyse interactions');
   }
   analyseInterEnCours = false;
   updatePreview();
@@ -2191,7 +2212,7 @@ async function genererAnalyseInter() {
 
 function buildSection_accueil() {
   var L = [], acc = [], sv = [];
-  if(v('doubleId') === 'oui') acc.push('Client identifié (nom + DDN)');
+  if(v('doubleId') === 'oui') acc.push('Identification confirmée (nom + DDN)');
   if(v('consentement') === 'oui') acc.push('Consentement et questionnaire pré-examen complétés dans Juvonno');
   if(v('pa'))       sv.push('PA ' + v('pa') + ' mmHg');
   if(v('fc'))        sv.push('FC ' + v('fc') + ' /min');
@@ -2477,7 +2498,7 @@ function buildSection_finNuit(inh) {
   var parties = [];
   var q = v('questNuit');
   if(q === 'complété') parties.push('Le questionnaire d\'évaluation de la nuit a été complété.');
-  else if(q === 'refusé par le client') parties.push('Le questionnaire d\'évaluation de la nuit a été refusé par le client.');
+  else if(q === 'refus du client') parties.push('Le questionnaire d\'évaluation de la nuit a été refus du client.');
   else if(q === 'non-rempli') parties.push('Le questionnaire d\'évaluation de la nuit n\'a pas été rempli.');
   var r = v('regleScoring');
   if(r) parties.push(r);
@@ -2825,7 +2846,6 @@ function exporterHTML(){
 
   // Sauvegarder l'état JS dans le textarea caché
   var state = {
-    apiKey: IA_API_KEY,
     etudeActive: etudeActive, chambreActive: chambreActive,
     modulesActifs: modulesActifs, events: events, paliers: paliers,
     masqueChanges: masqueChanges, o2Events: o2Events, meds: meds,
@@ -2881,114 +2901,6 @@ function exporterHTML(){
   setTimeout(function(){URL.revokeObjectURL(url);},1000);
 }
 
-function resetAll(){
-  var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center';
-  var box = document.createElement('div');
-  box.style.cssText = 'background:white;border-radius:10px;padding:28px 32px;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);font-family:Segoe UI,sans-serif';
-  box.innerHTML = '<div style="font-size:15px;font-weight:700;color:#b83232;margin-bottom:12px">⚠ Réinitialiser le journal</div>'
-    + '<div style="font-size:13px;color:#1a2333;line-height:1.6;margin-bottom:20px">Toutes les données saisies pour cette nuit seront effacées.<br><strong>Cette action est irréversible.</strong></div>'
-    + '<div style="display:flex;gap:10px;justify-content:flex-end">'
-    + '<button id="resetCancel" style="padding:8px 18px;border-radius:5px;border:1px solid #dde3ec;background:white;font-size:13px;cursor:pointer;font-family:inherit">Annuler</button>'
-    + '<button id="resetConfirm" style="padding:8px 18px;border-radius:5px;border:none;background:#b83232;color:white;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Réinitialiser</button>'
-    + '</div>';
-  overlay.appendChild(box);
-  document.body.appendChild(overlay);
-  document.getElementById('resetCancel').onclick = function(){ document.body.removeChild(overlay); };
-  document.getElementById('resetConfirm').onclick = function(){
-    document.body.removeChild(overlay);
-    doReset();
-  };
-}
-
-function doReset(){
-  // 1. Vider tous les champs texte, time, number, textarea
-  var inputs = document.querySelectorAll('input[type=text],input[type=time],input[type=number],textarea');
-  for(var i=0;i<inputs.length;i++) inputs[i].value = '';
-
-  // 2. Remettre tous les selects à la première option
-  var selects = document.querySelectorAll('select');
-  for(var i=0;i<selects.length;i++) selects[i].selectedIndex = 0;
-
-  // 3. Décocher toutes les cases
-  var checks = document.querySelectorAll('input[type=checkbox]');
-  for(var i=0;i<checks.length;i++) checks[i].checked = false;
-
-  // 4. Réinitialiser l'état JS
-  etudeActive = '';
-  chambreActive = '';
-  modulesActifs = {};
-  events = [];
-  paliers = [];
-  masqueChanges = [];
-  o2Events = [];
-  meds = [];
-  palierOffset = 0;
-  masqueOffset = 0;
-  eventOffset = 0;
-  o2Offset = 0;
-  editingO2Id = null; setO2EditMode(false);
-  positionActive=''; Object.keys(posMap).forEach(function(k){var b=document.getElementById(posMap[k]);if(b)b.classList.remove('qbtn-active');});
-  editingPalierId = null; setPalierEditMode(false);
-  editingMasqueId = null; setMasqueEditMode(false);
-  editingEventId = null; setEventEditMode(false);
-
-  // 5. Remettre les boutons chambre à zéro
-  document.getElementById('ch1').classList.remove('active');
-  document.getElementById('ch2').classList.remove('active');
-  var ct=document.getElementById('chambreTopbar');if(ct){ct.textContent='—';ct.style.color='rgba(255,255,255,0)';}
-
-  // 6. Retirer active de tous les boutons module/étude
-  var toggles = document.querySelectorAll('.module-toggle');
-  for(var i=0;i<toggles.length;i++) toggles[i].classList.remove('active');
-
-  // 7. Masquer tous les modules conditionnels (cond)
-  var conds = document.querySelectorAll('.cond');
-  for(var i=0;i<conds.length;i++) conds[i].classList.remove('on');
-
-  // 8. Remettre toutes les cards dans leur état initial
-  //    — Identification et Type d'étude : ouvertes (pas collapsed)
-  //    — Tout le reste : collapsed
-  var allCards = document.querySelectorAll('.card');
-  var openCards = ['card-header-ident','card-header-type']; // marqueurs à ajouter
-  for(var i=0;i<allCards.length;i++){
-    var hdr = allCards[i].querySelector('.card-header');
-    var btn = allCards[i].querySelector('.collapse-btn');
-    var isOpen = hdr && (hdr.textContent.indexOf('① Identification') !== -1 || hdr.textContent.indexOf('② Type') !== -1);
-    if(isOpen){
-      allCards[i].classList.remove('collapsed');
-      if(btn) btn.textContent = '−';
-    } else {
-      allCards[i].classList.add('collapsed');
-      if(btn) btn.textContent = '+';
-    }
-  }
-
-  // 9. Rerendre les listes dynamiques
-  renderEvents();
-  renderPaliers();
-  renderMasqueChanges();
-  renderO2();
-  renderMeds();
-  initCollapseHeaders();
-
-  // 10. Remettre la date à aujourd'hui
-  initCal();
-  var today = new Date();
-  var dd = ('0'+today.getDate()).slice(-2), mm = ('0'+(today.getMonth()+1)).slice(-2), yyyy = today.getFullYear();
-  document.getElementById('dateExamen').value = yyyy+'-'+mm+'-'+dd;
-  updatePreview();
-
-  // 12. Retourner à l'aperçu si on était sur la note finale
-  retourApercu();
-
-  // 13. Mettre à jour l'aperçu
-  updatePreview();
-
-  // 14. Vider le mémo
-  var memoEl = document.getElementById('memoText');
-  if(memoEl) memoEl.value = '';
-}
 
 // ─── DICTÉE VOCALE ───
 var dicteeCourante = null;
@@ -3250,15 +3162,119 @@ function afficherStatutCle(msg, color) {
   var el = document.getElementById('apiKeyStatus');
   if(el) { el.textContent = msg; el.style.color = color; }
 }
+
+// ─── SANTÉ IA ───
+var iaSanteEnCours = false;
+
+function afficherSante(lignes) {
+  lignes.forEach(function(l) {
+    // Extraire le texte brut du HTML
+    var tmp = document.createElement('div');
+    tmp.innerHTML = l;
+    agentAjouterLog(tmp.textContent || tmp.innerText || l);
+  });
+}
+
+async function verifierSanteIA() {
+  if(!IA_API_KEY || !IA_API_KEY.trim()) {
+    afficherSante(['<span style="color:var(--red)">🔴 Clé manquante — entrer une clé Anthropic</span>']);
+    return;
+  }
+  // Afficher "en cours"
+  afficherSante([
+    '<span style="color:var(--muted)">🟡 Sonnet — vérification en cours...</span>',
+    '<span style="color:var(--muted)">🟡 Haiku — vérification en cours...</span>'
+  ]);
+
+  var results = { sonnet: null, haiku: null };
+
+  // Tester Sonnet et Haiku en parallèle
+  async function testerModele(model) {
+    try {
+      var r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': IA_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: model,
+          max_tokens: 1,
+          messages: [{ role: 'user', content: 'ok' }]
+        })
+      });
+      var d = await r.json();
+      if(r.ok) return 'ok';
+      if(r.status === 401) return 'invalide';
+      if(r.status === 429) return 'quota';
+      if(r.status === 404) return 'introuvable';
+      if(r.status === 529) return 'surchargé';
+      return 'erreur ' + r.status;
+    } catch(e) {
+      return 'connexion';
+    }
+  }
+
+  var [rSonnet, rHaiku] = await Promise.all([
+    testerModele('claude-sonnet-4-6'),
+    testerModele('claude-haiku-4-5-20251001')
+  ]);
+
+  // Si tout OK — une seule ligne
+  if(rSonnet === 'ok' && rHaiku === 'ok') {
+    afficherSante(['<span style="color:var(--green)">🟢 IA opérationnelle</span>']);
+    return;
+  }
+
+  // Sinon — détailler
+  var lignes = [];
+  function ligne(statut, nom, detail) {
+    var icone = statut === 'ok' ? '🟢' : statut === 'surchargé' || statut === 'quota' ? '🟡' : '🔴';
+    var couleur = statut === 'ok' ? 'var(--green)' : statut === 'surchargé' || statut === 'quota' ? 'var(--orange)' : 'var(--red)';
+    var msg = statut === 'ok' ? 'disponible'
+      : statut === 'invalide' ? 'clé invalide (401)'
+      : statut === 'quota' ? 'quota dépassé (429)'
+      : statut === 'introuvable' ? 'modèle introuvable (404)'
+      : statut === 'surchargé' ? 'surchargé, réessayer (529)'
+      : statut === 'connexion' ? 'pas de connexion'
+      : statut;
+    return '<span style="color:' + couleur + '">' + icone + ' ' + nom + ' — ' + msg + '</span>';
+  }
+
+  if(rSonnet === 'invalide' || rHaiku === 'invalide') {
+    lignes.push(ligne('invalide', 'Clé API', ''));
+  } else {
+    if(rSonnet !== 'ok') lignes.push(ligne(rSonnet, 'Sonnet 4-6', ''));
+    else lignes.push(ligne('ok', 'Sonnet 4-6', ''));
+    if(rHaiku !== 'ok') lignes.push(ligne(rHaiku, 'Haiku 4-5', ''));
+    else lignes.push(ligne('ok', 'Haiku 4-5', ''));
+  }
+  afficherSante(lignes);
+}
+
 function masquerCle() {
   var el = document.getElementById('apiKeyStatus');
   var input = document.getElementById('apiKeyInput');
-  if(IA_API_KEY) {
+  var hasKey = !!(IA_API_KEY && IA_API_KEY.trim());
+  if(hasKey) {
     if(el) { el.textContent = '✓ Clé active : ' + IA_API_KEY.substring(0,16) + '...'; el.style.color = 'var(--green)'; }
     if(input) input.placeholder = '✓ Clé sauvegardée — entrer une nouvelle pour remplacer';
   } else {
     if(el) { el.textContent = 'Aucune clé — entrer ta clé Anthropic ci-dessus.'; el.style.color = 'var(--muted)'; }
     if(input) input.placeholder = 'sk-ant-api03-...';
+  }
+  // Bouton Enrichir — visible seulement si clé active
+  var btnE = document.getElementById('btnEnrichir');
+  if(btnE) btnE.style.display = hasKey ? '' : 'none';
+  // Agent — grisé si pas de clé
+  var agentCb = document.getElementById('agentActif');
+  var agentLabel = agentCb ? agentCb.closest('label') : null;
+  if(agentCb) {
+    agentCb.disabled = !hasKey;
+    if(!hasKey && agentCb.checked) { agentCb.checked = false; toggleAgent(false); }
+    if(agentLabel) { agentLabel.style.opacity = hasKey ? '1' : '0.4'; agentLabel.style.cursor = hasKey ? 'pointer' : 'not-allowed'; }
   }
 }
 // ─── GESTION CONSIGNES ADDITIONNELLES IA ───
@@ -3274,6 +3290,7 @@ function ouvrirModalIA() {
   masquerCle();
   document.getElementById('promptEditeur').value = IA_CONSIGNES;
   document.getElementById('iaModal').style.display = 'flex';
+  if(IA_API_KEY) verifierSanteIA();
   // Griser l'agent si pas de clé
   var agentCb = document.getElementById('agentActif');
   var agentLabel = agentCb ? agentCb.closest('label') : null;
@@ -3329,22 +3346,26 @@ function toggleAgent(actif) {
     btn.title = actif ? "Parler à l'agent (dictée)" : "Dicter dans le champ actif";
     btn.style.background = actif ? 'var(--purple)' : 'var(--navy)';
   }
+  if(!actif && dicteeCourante) { dicteeCourante.stop(); }
+  // Lancer le diagnostic IA quand on active l'agent
+  if(actif && IA_API_KEY) verifierSanteIA();
 }
 
 function agentAjouterLog(texte) {
-  // Ajouter au log (max 20)
   agentLog.push(texte);
   if(agentLog.length > 20) agentLog.shift();
-  // Mettre à jour le log dans le modal
   var el = document.getElementById('agentLog');
   if(el) {
     el.innerHTML = agentLog.map(function(t){
-      return '<div style="padding:3px 0;border-bottom:1px solid var(--border);color:var(--text)">✓ ' + t + '</div>';
+      var isErr = t.startsWith('\u26a0');
+      var isOk = t.startsWith('🟢');
+      var color = isErr ? 'var(--red)' : 'var(--text)';
+      var content = isOk ? '<span style="color:var(--green)">🟢</span>' + t.slice(2) : t;
+      return '<div style="padding:3px 0;border-bottom:1px solid var(--border);color:'+color+'">' + content + '</div>';
     }).join('');
     el.scrollTop = el.scrollHeight;
   }
-  // Afficher une bulle toast
-  agentAfficherToast(texte);
+  if(!texte.startsWith('\u26a0')) agentAfficherToast(texte);
 }
 
 function agentAfficherToast(texte) {
@@ -3382,12 +3403,12 @@ CHAMPS DISPONIBLES ET ACTIONS :
 ── MODULE 1 : IDENTIFICATION ──
 {"action":"setChambre","valeur":"Chambre 1"} ou "Chambre 2"
 {"action":"setInh","valeur":"Renaud Beausoleil"} ou "Nathalie Raymond"
+{"action":"setSexe","valeur":"M"}  // ou "F" — genre du patient
 {"action":"setDossier","valeur":"12345"}
 {"action":"setNom","valeur":"Nom Prénom"}
 {"action":"setAge","valeur":"52"}
 {"action":"setDateNaissance","valeur":"1972-03-15"}
 {"action":"setDateExamen","valeur":"2026-05-20"} // date de l'examen (format YYYY-MM-DD)
-{"action":"setSexe","valeur":"H"} ou "F"
 {"action":"setDoubleId","valeur":"oui"} ou "non"
 {"action":"setConsentement","valeur":"oui"} ou "non"
 
@@ -3470,7 +3491,7 @@ MODULES ADDITIONNELS :
 
 ── MODULE 6 : FIN DE NUIT ──
 {"action":"setLightsOn","heure":"06:00"}
-{"action":"setQuestNuit","valeur":"refusé par le client"} ou "complété"
+{"action":"setQuestNuit","valeur":"refus du client"} ou "complété"
 {"action":"setRegleScoring","valeur":"Règles de scoring AASM v3 appliquées (détails consignés au rapport)"} ou ""
 {"action":"setEtudeDistrib","valeur":"Étude distribuée dans G3, Dropbox et notes Juvonno"} ou ""
 {"action":"setCommentairesFin","valeur":"texte"}
@@ -3497,7 +3518,6 @@ MODULES ADDITIONNELS :
 {"action":"fermerIA"}
 {"action":"setConsignes","texte":"toujours utiliser le format 24h"}
 {"action":"sauvegarderConsignes"}
-{"action":"reinitialiser"} // efface tout et recommence (demander confirmation)
 {"action":"annuler"}          // annule la dernière action de l'agent
 
 LEXIQUE CHROME — CORRECTIONS DE TRANSCRIPTION :
@@ -3655,15 +3675,19 @@ async function agentExecuter(texte) {
       })
     });
     var data = await response.json();
-    if(!response.ok) { if(response.status!==401&&response.status!==404){MED_PSG_CACHE[key]='ERROR';renderMeds();} return; }
+    if(!response.ok) {
+      agentAjouterLog(response.status===529?'\u26a0 Sonnet \u2014 surcharg\u00e9 (529)':response.status===429?'\u26a0 Sonnet \u2014 quota d\u00e9pass\u00e9 (429)':response.status===401?'\u26a0 Sonnet \u2014 cl\u00e9 invalide (401)':'\u26a0 Sonnet \u2014 erreur '+response.status);
+      return;
+    }
     var raw = data.content && data.content[0] ? data.content[0].text : '[]';
     var actions;
     try { actions = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
     catch(pe) { return; }
     if(Array.isArray(actions)) {
       actions.forEach(function(a){ agentAppliquerAction(a); });
+      updatePreview();
     }
-  } catch(e) { MED_PSG_CACHE[key]='ERROR'; renderMeds(); }
+  } catch(e) {}
 }
 
 function agentAppliquerAction(a) {
@@ -3788,6 +3812,11 @@ function agentAppliquerAction(a) {
         label = 'Date examen : ' + a.valeur; ok = true;
       }
       break; }
+    case 'setSexe': {
+      var sel = document.getElementById('sexePatient');
+      var val = (a.valeur||'').toUpperCase();
+      if(sel && (val==='M'||val==='F')) { sel.value=val; sel.dispatchEvent(new Event('change')); label='Sexe : '+val; ok=true; }
+      break; }
     case 'setDossier':
       if(setField('dossier', a.valeur)) { label = 'Dossier : ' + a.valeur; ok = true; }
       break;
@@ -3807,9 +3836,6 @@ function agentAppliquerAction(a) {
       break;
     case 'setAge':
       if(setField('age', a.valeur)) { label = 'Âge : ' + a.valeur + ' ans'; ok = true; }
-      break;
-    case 'setSexe':
-      if(setField('sexe', a.valeur)) { label = 'Sexe : ' + a.valeur; ok = true; }
       break;
     case 'setPoids':
       if(setField('poids', a.valeur)) { label = 'Poids : ' + a.valeur + ' kg'; ok = true; }
@@ -3921,9 +3947,7 @@ function agentAppliquerAction(a) {
         label = 'SN départ CPAP '+a.valeur+' cmH₂O'; ok = true;
       }
       break;
-    case 'reinitialiser':
-      resetAll(); label = 'Formulaire réinitialisé'; ok = true;
-      break;
+
     case 'setLightsOn':
       if(setField('lightsOn', a.heure)) { label = 'Lights-on ' + a.heure; ok = true; }
       break;
@@ -4031,7 +4055,7 @@ function agentAppliquerAction(a) {
       var idx = meds.findIndex(function(m){ return m.nom.toLowerCase() === (a.nom||'').toLowerCase(); });
       if(idx >= 0) {
         meds[idx] = {id:meds[idx].id, nom:a.nom||meds[idx].nom, dose:a.dose||meds[idx].dose, coucher:a.coucher!==undefined?a.coucher:meds[idx].coucher};
-        renderMeds(); label = a.nom + ' modifié'; ok = true;
+        renderMeds(); updatePreview(); label = a.nom + ' modifié'; ok = true;
       }
       break; }
     case 'deleteMedNom':
@@ -4057,7 +4081,6 @@ function agentAppliquerAction(a) {
   }
   if(ok) {
     agentAjouterLog(label);
-    updatePreview();
   }
 }
 
@@ -4151,10 +4174,19 @@ var IA_API_KEY = ''; // Clé API — saisie via le modal Prompt de base
 // Charger depuis localStorage après déclaration
 document.addEventListener('DOMContentLoaded', function() {
   try { var k = localStorage.getItem('csr_api_key'); if(k) IA_API_KEY = k; } catch(e) {}
+  // Charger le cache médicaments depuis localStorage
+  try {
+    var cached = localStorage.getItem('csr_med_psg_cache');
+    if(cached) {
+      var obj = JSON.parse(cached);
+      Object.keys(obj).forEach(function(k){ if(!MED_PSG[k]) MED_PSG[k] = obj[k]; });
+    }
+  } catch(e) {}
+  masquerCle();
 });
-var IA_MODEL   = 'claude-sonnet-4-5';
+var IA_MODEL   = 'claude-sonnet-4-6';
 
-var IA_PROMPT_SYSTEME = `Tu es un inhalothérapeute thérapeute respiratoire RPSGT travaillant au Laboratoire du sommeil de la Clinique de Santé Respiratoire des Sommets (CSR Sommets), à Blainville/Laurentides, Québec. Tu rédiges des notes cliniques au dossier à partir des données brutes consignées durant une étude du sommeil.
+var IA_PROMPT_SYSTEME = `Tu es un inhalothérapeute thérapeute respiratoire RPSGT travaillant au Laboratoire du sommeil de la Clinique de Santé Respiratoire des Sommets (CSR Sommets), à Blainville/Laurentides, Québec. Tu rédiges des notes cliniques au dossier à partir des données brutes consignées durant une étude du sommeil. Le sexe du patient est indiqué en fin de note (Sexe : M ou F). Si F, utiliser le féminin pour tous les accords (la patiente, elle, installée, présentée, etc.). Si M, utiliser le masculin.
 
 LANGUE ET STYLE
 Français clinique québécois, professionnel et concis. Troisième personne pour le client, première personne du pluriel pour les actions cliniques. Phrases complètes, ton neutre et factuel. Prose continue — pas de bullet points. Ne jamais créer de nouvelles sections absentes de la note brute.
@@ -4172,7 +4204,10 @@ TERMINOLOGIE ET FORMATAGE
 AASM Manual v3 (Troester et al., 2023). CPAP, BiPAP, APAP en majuscules. Pressions en cmH₂O, SpO₂ en %, FC en /min, poids en kg, taille en cm, IMC en kg/m². Noms de marques et modèles de masques tels qu'ils apparaissent dans la note brute. Médicaments en minuscules sauf si nom de marque clairement identifié. Heures au format HH h MM avec espace avant et après le h (ex. : 21 h 00, 02 h 30).
 
 TITRATION PPC — RÈGLE IMPORTANTE
-Pour la section Titration PPC (PSG-TX et PSG-SN) : NE PAS lister chaque palier chronologiquement. Rédiger une synthèse narrative COURTE et CONCISE — 3 à 5 phrases maximum. Mentionner uniquement : pression de départ, pression finale atteinte, éléments cliniques les plus significatifs (changement de masque, stade de validation, position). Omettre les détails intermédiaires mineurs. Ne pas inclure les événements du journal dans cette section. Exemple : La titration a progressé de X à Y cmH₂O. Une pression thérapeutique a été validée à Y cmH₂O en position dorsale en stade REM. Un changement de masque a été effectué en raison de fuites.
+Pour la section Titration PPC (PSG-TX et PSG-SN) : Si aucun palier de pression n'est présent dans le module (seulement des changements de masques ou module vide), ne pas générer de section Titration — passer directement à la suite. Si des paliers sont présents, rédiger un résumé concis de l'essentiel : pression de départ, pression finale, éléments cliniques déterminants (stade REM, position, masque). Pas de play-by-play, pas de liste chronologique, pas de détails intermédiaires mineurs. La longueur s'adapte à la complexité de la nuit.
+
+COMMENTAIRES DE RÉVISION — RÈGLE ANTI-RÉPÉTITION
+Si une pression thérapeutique, une conclusion de titration ou une suggestion clinique est déjà présente dans les commentaires de révision bruts, ne pas la répéter ni la reformuler ailleurs dans la note. L'intégrer telle quelle ou la compléter uniquement si quelque chose manque. S'applique à PSG-TX et PSG-SN.
 
 CONTEXTE CLINIQUE PAR TYPE D'ÉTUDE
 PSG-DX : Enregistrement nocturne complet. Aucune intervention thérapeutique. Interprétation des indices (IAH, IDO, PLM index) réservée au médecin.
@@ -4195,8 +4230,11 @@ Ne jamais modifier, reformuler ou réécrire les titres de section. Les reprodui
 JOURNAL DES ÉVÉNEMENTS — RÈGLE ABSOLUE
 Reproduire cette section EXACTEMENT telle quelle, caractère par caractère, sans aucune modification. Ne corriger ni reformuler aucune ligne. Ne pas changer l'ordre. Ne pas fusionner, résumer ou omettre quoi que ce soit. Le journal est une donnée technique immuable — l'IA n'y touche pas.
 
+INTERACTIONS MÉDICAMENTEUSES — RÈGLE ABSOLUE
+Si cette section est présente dans la note brute, la reproduire EXACTEMENT telle quelle, sans modification, reformulation ni intégration dans un autre paragraphe. Ne pas la déplacer. C'est une analyse déjà générée par IA — ne pas la retravailler.
+
 COMMENTAIRES DE RÉVISION
-Deux paragraphes séparés par un saut de ligne. Premier paragraphe : les commentaires de révision de la note brute (et suggestion thérapeutique pour PSG-TX et PSG-SN). Deuxième paragraphe, toujours en dernier : Le questionnaire d'évaluation de la nuit a été complété. Les règles de cotation AASM v3 ont été appliquées et les détails sont consignés au rapport d'enregistrement. L'étude a été distribuée dans les systèmes G3, Dropbox et dans les notes cliniques Juvonno.
+Rédiger en prose clinique. Premier paragraphe : les commentaires de révision de la note brute (et suggestion thérapeutique pour PSG-TX et PSG-SN). Paragraphe final : reproduire le contenu administratif de clôture tel qu'il apparaît dans la note brute (questionnaire, scoring, distribution).
 
 SUGGESTION THÉRAPEUTIQUE (PSG-TX et PSG-SN)
 Reformuler l'ensemble du paragraphe des Commentaires de révision en y intégrant fluidement tes suggestions thérapeutiques. Ne pas créer de paragraphe séparé. Ne rien omettre de ce que le clinicien a déjà écrit dans ses commentaires — reformuler si nécessaire pour intégrer les suggestions, mais conserver tous les éléments cliniques présents. Ajouter uniquement des suggestions pertinentes qui ne sont pas déjà couvertes : pression thérapeutique finale, masque recommandé, position et stade de validation. Ne pas répéter des suggestions déjà explicitement formulées par le clinicien.
@@ -4304,6 +4342,7 @@ async function iaGenererNote() {
       document.getElementById('viewIA').style.display = 'flex';
     }
   } catch(e) {
+    agentAjouterLog('\u26a0 Sonnet \u2014 ' + (e.message||'erreur inconnue'));
     alert('Erreur IA : ' + e.message);
   }
   iaSetLoading(false);
