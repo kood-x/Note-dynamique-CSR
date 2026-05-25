@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Journal de nuit — CSR Sommets</title>
 <style>
-:root{--navy:#1f3864;--blue:#2e75b6;--lightblue:#c5d9f1;--gray:#f5f7fa;--border:#dde3ec;--text:#1a2333;--muted:#6b7a90;--white:#fff;--green:#2d7a4f;--orange:#c96a00;--red:#b83232;--purple:#7b5ea7}
-body.dark{--navy:#90b8e0;--blue:#7eb3e8;--lightblue:#1e3a5f;--gray:#1a1d24;--border:#2e3340;--text:#dde3ec;--muted:#8a95a8;--white:#23262f;--green:#4caf7d;--orange:#e0923a;--red:#e05c5c;--purple:#b39ddb}
+:root{--navy:#1f3864;--blue:#2e75b6;--lightblue:#c5d9f1;--gray:#f5f7fa;--border:#dde3ec;--text:#1a2333;--muted:#6b7a90;--white:#fff;--green:#5c7a2a;--orange:#c96a00;--red:#b83232;--purple:#7b5ea7;--note:#2d7a50}
+body.dark{--navy:#90b8e0;--blue:#7eb3e8;--lightblue:#1e3a5f;--gray:#1a1d24;--border:#2e3340;--text:#dde3ec;--muted:#8a95a8;--white:#23262f;--green:#96bc52;--orange:#e0923a;--red:#e05c5c;--purple:#b39ddb;--note:#5a9e72}
 body.dark .topbar{background:#111318}
 body.dark .card{background:#23262f;border-color:#2e3340}
 body.dark .card-header.blue{background:#1e3a5f;color:#90b8e0}
-body.dark .note-finale-box{background:#1a1d24;border-color:#2e3340}
+body.dark .note-finale-box{background:#1a1d24}
 body.dark input,body.dark textarea,body.dark select{background:#1a1d24;color:#dde3ec;border-color:#2e3340}
+body.dark input[type=time]{color-scheme:dark}
 body.dark .chron-item{background:#23262f;border-color:#2e3340}
 body.dark .med-item{background:#23262f;border-color:#2e3340}
 body.dark #memoPanel{background:#2a2600 !important;border-color:#6b5c00 !important}
@@ -66,8 +67,9 @@ textarea{resize:vertical;min-height:60px}
 .c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:1fr 1fr 1fr}.c4{grid-template-columns:1fr 1fr 1fr 1fr}
 .btn{padding:7px 14px;border-radius:5px;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:inherit}
 .btn-blue{background:var(--blue);color:white}.btn-blue:hover{background:#245e92}
-.btn-outline{background:white;color:var(--navy);border:1px solid var(--border)}.btn-outline:hover{background:var(--gray)}
+.btn-outline{background:var(--white);color:var(--navy);border:1px solid var(--border)}.btn-outline:hover{background:var(--gray)}
 .btn-green{background:var(--green);color:white}.btn-green:hover{background:#235e3c}
+.btn-note{background:var(--note);color:white}.btn-note:hover{opacity:.85}
 .btn-ia{background:linear-gradient(135deg,#6a3de8,#4a90d9);color:white;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .15s}
 .btn-ia:hover{opacity:.85}
 .btn-ia:disabled{opacity:.5;cursor:not-allowed}
@@ -132,7 +134,7 @@ textarea{resize:vertical;min-height:60px}
 .preview-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .preview-header h3{font-size:13px;font-weight:600;color:var(--navy)}
 .preview-label{font-size:11px;color:var(--muted);background:var(--lightblue);padding:2px 8px;border-radius:10px}
-.note-finale-box{background:var(--white);border:2px solid var(--green);border-radius:8px;padding:14px;flex:1;display:flex;flex-direction:column;min-height:0}
+.note-finale-box{background:var(--white);border:2px solid var(--note);border-radius:8px;padding:14px;flex:1;display:flex;flex-direction:column;min-height:0}
 
 
 /* CALENDRIER */
@@ -762,7 +764,7 @@ textarea:focus::placeholder{color:transparent}
   <button class="btn btn-ia" onclick="ouvrirModalIA()" style="font-size:12px">🤖 IA</button>
   <div style="display:flex;gap:8px;align-items:center">
     <button class="btn" onclick="exporterHTML()" style="background:var(--navy);color:white;font-size:12px">💾 Exporter</button>
-    <button class="btn btn-green" onclick="genererNote()" style="padding:10px 20px;font-size:14px">✓ Éditer la note</button>
+    <button class="btn btn-note" onclick="genererNote()" style="padding:10px 20px;font-size:14px">✓ Éditer la note</button>
   </div>
 </div>
 
@@ -809,7 +811,7 @@ textarea:focus::placeholder{color:transparent}
       <!-- Agent conversationnel -->
       <div style="padding:14px 20px;border-bottom:1px solid var(--border)">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--navy)">
-          <input type="checkbox" id="agentActif" style="width:auto;accent-color:var(--navy)" onchange="toggleAgent(this.checked)">
+          <input type="checkbox" id="agentActif" style="width:auto;accent-color:var(--navy)">
           🗣 Activer l'agent conversationnel
         </label>
         <div style="font-size:11px;color:var(--muted);margin-top:4px;margin-left:22px">Le bouton 🎤 dicte à l'agent qui remplit les champs automatiquement.</div>
@@ -874,8 +876,8 @@ textarea:focus::placeholder{color:transparent}
           <div class="ia-spinner"></div><span id="iaStatusText">L'IA rédige…</span>
         </div>
       </div>
-      <div style="font-size:13px;font-weight:600;color:var(--green)">✓ Note — édition manuelle</div>
-      <button class="btn btn-green btn-sm" id="copyBtn" onclick="copyNote()">📋 Copier</button>
+      <div style="font-size:13px;font-weight:600;color:var(--note)" class="note-titre">✓ Note — édition manuelle</div>
+      <button class="btn btn-note btn-sm" id="copyBtn" onclick="copyNote()">📋 Copier</button>
     </div>
     <div class="note-finale-box">
       <div id="noteFinaleText" contenteditable="true" spellcheck="false" autocorrect="off" style="font-family:Calibri,sans-serif;font-size:10pt;line-height:1.0;overflow-y:auto;flex:1;min-height:0;outline:none;white-space:pre-wrap"></div>
@@ -890,7 +892,7 @@ textarea:focus::placeholder{color:transparent}
         <button class="btn btn-outline btn-sm" onclick="retourNoteGeneree()">← Note générée</button>
       </div>
       <div style="font-size:13px;font-weight:600;color:var(--purple)">✨ Note enrichie par l'IA</div>
-      <button class="btn btn-green btn-sm" onclick="copyNoteIA()">📋 Copier</button>
+      <button class="btn btn-note btn-sm" onclick="copyNoteIA()">📋 Copier</button>
     </div>
     <div class="note-finale-box">
       <div id="noteIAText" contenteditable="true" spellcheck="false" autocorrect="off" style="font-family:Calibri,sans-serif;font-size:10pt;line-height:1.0;overflow-y:auto;flex:1;min-height:0;outline:none;white-space:pre-wrap"></div>
@@ -2245,7 +2247,7 @@ function buildSection_accueil() {
 function buildSection_analyseInter() {
   var cb = document.getElementById('analyseInterCheck');
   if(!cb || !cb.checked || !analyseInterTexte) return [];
-  return ['Interactions médicamenteuses — Analyse IA', analyseInterTexte, ''];
+  return ['Interactions médicamenteuses — Analyse IA', analyseInterTexte];
 }
 
 function buildSection_enregistrement() {
@@ -2599,8 +2601,8 @@ function formatNote(text) {
 
     // Titres de section — couleur selon le module
     var sectColors = { 'Accueil & évaluation initiale':'#2e75b6', 'Enregistrement':'#2e75b6', 'Appareillage initial':'#2e75b6',
-      'Nuit partagée':'#2d7a4f',
-      'Interactions médicamenteuses':'#5b9bd5',
+      'Nuit partagée':'#5c7a2a',
+      'Interactions médicamenteuses':'#2e75b6',
       'Titration PPC':'#c96a00',
       'Journal des événements':'#2e75b6', 'Évolution en cours':'#1f3864',
       'Oxygène d':'#6aadd4',
@@ -2646,7 +2648,7 @@ function formatNote(text) {
       if(mMas) {
         var isBascule = mMas[2].indexOf('Bascule DX') >= 0;
         if(isBascule) {
-          out.push('<p style="'+BASE+'color:#2a7a2a;font-weight:bold">'+mMas[1]+mMas[2]+'</p>');
+          out.push('<p style="'+BASE+'color:#5c7a2a;font-weight:bold">'+mMas[1]+mMas[2]+'</p>');
         } else {
           out.push('<p style="'+BASE+'color:#2a7a2a"><span style="font-weight:bold">'+mMas[1]+'</span>'+mMas[2]+'</p>');
         }
@@ -2797,16 +2799,18 @@ function validerChampsNote(){
 function genererNote(){
   var manquants=validerChampsNote();
   if(manquants.length){
+    var isDark=document.body.classList.contains('dark');
     var overlay=document.createElement('div');
     overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center';
     var box=document.createElement('div');
-    box.style.cssText='background:white;border-radius:10px;padding:28px 32px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);font-family:Segoe UI,sans-serif';
+    box.style.cssText='background:'+(isDark?'#23262f':'white')+';border-radius:10px;padding:28px 32px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);font-family:Segoe UI,sans-serif';
     var liste=manquants.map(function(m){return '<li style="margin:4px 0">'+m+'</li>';}).join('');
-    box.innerHTML='<div style="font-size:15px;font-weight:700;color:#b83232;margin-bottom:12px">⚠ Champs obligatoires manquants</div>'
-      +'<div style="font-size:13px;color:#1a2333;margin-bottom:14px">Les champs suivants sont requis pour éditer la note :</div>'
-      +'<ul style="font-size:13px;color:#1a2333;padding-left:20px;margin-bottom:20px;line-height:1.8">'+liste+'</ul>'
+    var textColor=isDark?'#dde3ec':'#1a2333';
+    box.innerHTML='<div style="font-size:15px;font-weight:700;color:#e05c5c;margin-bottom:12px">⚠ Champs obligatoires manquants</div>'
+      +'<div style="font-size:13px;color:'+textColor+';margin-bottom:14px">Les champs suivants sont requis pour éditer la note :</div>'
+      +'<ul style="font-size:13px;color:'+textColor+';padding-left:20px;margin-bottom:20px;line-height:1.8">'+liste+'</ul>'
       +'<div style="display:flex;justify-content:flex-end">'
-      +'<button id="alertOk" style="padding:8px 22px;border-radius:5px;border:none;background:#1f3864;color:white;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Compris</button>'
+      +'<button id="alertOk" style="padding:8px 22px;border-radius:5px;border:none;background:var(--note);color:white;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Compris</button>'
       +'</div>';
     overlay.appendChild(box);
     document.body.appendChild(overlay);
@@ -3290,10 +3294,10 @@ function ouvrirModalIA() {
   masquerCle();
   document.getElementById('promptEditeur').value = IA_CONSIGNES;
   document.getElementById('iaModal').style.display = 'flex';
-  // Griser l'agent si pas de clé
   var agentCb = document.getElementById('agentActif');
   var agentLabel = agentCb ? agentCb.closest('label') : null;
   if(agentCb) {
+    agentCb.checked = agentActifMode;
     var hasKey = !!(IA_API_KEY && IA_API_KEY.trim());
     agentCb.disabled = !hasKey;
     if(agentLabel) agentLabel.style.opacity = hasKey ? '1' : '0.4';
@@ -3306,6 +3310,8 @@ function ouvrirModalIA() {
   }, 50);
 }
 function fermerModalIA() {
+  var agentCb = document.getElementById('agentActif');
+  if(agentCb) agentCb.checked = agentActifMode;
   document.getElementById('iaModal').style.display = 'none';
 }
 document.addEventListener('click', function(e) {
@@ -4128,6 +4134,11 @@ function fermerPrompt() {
 }
 function appliquerConsignes() {
   IA_CONSIGNES = document.getElementById('promptEditeur').value.trim();
+  // Appliquer changement agent seulement si modifié
+  var agentCb = document.getElementById('agentActif');
+  if(agentCb && agentCb.checked !== agentActifMode) {
+    toggleAgent(agentCb.checked);
+  }
   setTimeout(fermerPrompt, 400);
 }
 
