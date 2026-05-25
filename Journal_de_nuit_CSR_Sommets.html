@@ -804,7 +804,7 @@ textarea:focus::placeholder{color:transparent}
           <button class="btn btn-outline btn-sm" onclick="effacerApiKey()" title="Effacer la clé">🗑</button>
         </div>
         <div id="apiKeyStatus" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
-
+        <button class="btn btn-outline btn-sm" onclick="verifierSanteIA()" style="margin-top:8px;font-size:11px">🔍 Tester la connexion</button>
       </div>
       <!-- Agent conversationnel -->
       <div style="padding:14px 20px;border-bottom:1px solid var(--border)">
@@ -3290,7 +3290,6 @@ function ouvrirModalIA() {
   masquerCle();
   document.getElementById('promptEditeur').value = IA_CONSIGNES;
   document.getElementById('iaModal').style.display = 'flex';
-  if(IA_API_KEY) verifierSanteIA();
   // Griser l'agent si pas de clé
   var agentCb = document.getElementById('agentActif');
   var agentLabel = agentCb ? agentCb.closest('label') : null;
@@ -3347,8 +3346,6 @@ function toggleAgent(actif) {
     btn.style.background = actif ? 'var(--purple)' : 'var(--navy)';
   }
   if(!actif && dicteeCourante) { dicteeCourante.stop(); }
-  // Lancer le diagnostic IA quand on active l'agent
-  if(actif && IA_API_KEY) verifierSanteIA();
 }
 
 function agentAjouterLog(texte) {
