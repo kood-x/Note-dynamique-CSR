@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Journal de nuit — CSR Sommets</title>
 <style>
-:root{--navy:#1f3864;--blue:#2e75b6;--lightblue:#c5d9f1;--gray:#f5f7fa;--border:#dde3ec;--text:#1a2333;--muted:#6b7a90;--white:#fff;--green:#5c7a2a;--orange:#c96a00;--red:#b83232;--purple:#7b5ea7;--note:#2d7a50}
-body.dark{--navy:#90b8e0;--blue:#7eb3e8;--lightblue:#1e3a5f;--gray:#1a1d24;--border:#2e3340;--text:#dde3ec;--muted:#8a95a8;--white:#23262f;--green:#96bc52;--orange:#e0923a;--red:#e05c5c;--purple:#b39ddb;--note:#5a9e72}
+:root{--navy:#1f3864;--blue:#2e75b6;--lightblue:#c5d9f1;--gray:#f5f7fa;--border:#dde3ec;--text:#1a2333;--muted:#6b7a90;--white:#fff;--green:#2d7a50;--orange:#c96a00;--red:#b83232;--purple:#7b5ea7;--o2:#6aadd4;--note:#2d7a50}
+body.dark{--navy:#90b8e0;--blue:#7eb3e8;--lightblue:#1e3a5f;--gray:#1a1d24;--border:#2e3340;--text:#dde3ec;--muted:#8a95a8;--white:#23262f;--green:#5a9e72;--orange:#e0923a;--red:#e05c5c;--purple:#b39ddb;--o2:#4a8aab;--note:#5a9e72}
 body.dark .topbar{background:#111318}
 body.dark .card{background:#23262f;border-color:#2e3340}
 body.dark .card-header.blue{background:#1e3a5f;color:#90b8e0}
@@ -59,6 +59,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:va
 .card-header.blue{background:var(--blue)}
 .card-body{padding:12px 14px}
 label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px;font-weight:500}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}input[type=number]{-moz-appearance:textfield}
 input[type=text],input[type=time],input[type=number],select,textarea{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:5px;font-size:13px;font-family:inherit;background:var(--white);color:var(--text)}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
 textarea{resize:vertical;min-height:60px}
@@ -67,7 +68,7 @@ textarea{resize:vertical;min-height:60px}
 .btn{padding:7px 14px;border-radius:5px;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:inherit}
 .btn-blue{background:var(--blue);color:white}.btn-blue:hover{background:#245e92}
 .btn-outline{background:var(--white);color:var(--navy);border:1px solid var(--border)}.btn-outline:hover{background:var(--gray)}
-.btn-green{background:var(--green);color:white}.btn-green:hover{background:#235e3c}
+.btn-green{background:var(--green);color:white}.btn-green:hover{opacity:.85}
 .btn-note{background:var(--note);color:white}.btn-note:hover{opacity:.85}
 .btn-ia{background:linear-gradient(135deg,#6a3de8,#4a90d9);color:white;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .15s}
 .btn-ia:hover{opacity:.85}
@@ -581,10 +582,10 @@ textarea:focus::placeholder{color:transparent}
 </div>
 <!-- ⑤ JOURNAL GÉNÉRAL -->
 <div class="card cond" id="section-o2">
-  <div class="card-header"" style="background:#6aadd4">🫁 Oxygène d'appoint — OC-LAB-007<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
+  <div class="card-header"" style="background:var(--o2)">🫁 Oxygène d'appoint — OC-LAB-007<button class="collapse-btn" onclick="toggleCollapse(this)" title="Réduire/agrandir">+</button></div>
   <div class="card-body">
     <hr class="sep">
-    <div style="font-size:12px;font-weight:600;color:#6aadd4;margin-bottom:8px">🫁 Débits administrés</div>
+    <div style="font-size:12px;font-weight:600;color:var(--o2);margin-bottom:8px">🫁 Débits administrés</div>
     <div id="o2List"><div style="color:var(--muted);font-size:12px;font-style:italic">Aucun débit enregistré</div></div>
     <div class="add-form" style="margin-top:8px">
       <div class="row c3" style="margin-bottom:6px">
@@ -2246,7 +2247,7 @@ function buildSection_accueil() {
 function buildSection_analyseInter() {
   var cb = document.getElementById('analyseInterCheck');
   if(!cb || !cb.checked || !analyseInterTexte) return [];
-  return ['Interactions médicamenteuses — Analyse IA', analyseInterTexte];
+  return ['§NOBREAK§Interactions médicamenteuses — Analyse IA', analyseInterTexte];
 }
 
 function buildSection_enregistrement() {
@@ -2547,6 +2548,9 @@ function formatNote(text) {
   var BASE_NO_SIZE = 'font-family:Calibri,sans-serif;line-height:1.0;margin:0;margin-top:0;margin-bottom:0;padding:0;mso-line-height-rule:exactly;mso-margin-top-alt:0cm;mso-margin-bottom-alt:0cm;';
   var BASE = BASE_NO_SIZE + 'font-size:10pt;';
   var NAVY = '#1f3864';
+  var isDark = document.body.classList.contains('dark');
+  var NOTE_GREEN = isDark ? '#5a9e72' : '#2d7a50';
+  var NOTE_O2 = isDark ? '#4a8aab' : '#6aadd4';
   var BLUE = '#2e75b6';
   var BLANK = '<div style="font-family:Calibri,sans-serif;font-size:10pt;line-height:1.0;margin:0;margin-top:0;margin-bottom:0;padding:0;mso-line-height-rule:exactly;mso-margin-top-alt:0cm;mso-margin-bottom-alt:0cm;height:1em">&nbsp;</div>';
 
@@ -2607,11 +2611,11 @@ function formatNote(text) {
 
     // Titres de section — couleur selon le module
     var sectColors = { 'Accueil & évaluation initiale':'#2e75b6', 'Enregistrement':'#2e75b6', 'Appareillage initial':'#2e75b6',
-      'Nuit partagée':'#5c7a2a',
+      'Nuit partagée':NOTE_GREEN,
       'Interactions médicamenteuses':'#2e75b6',
       'Titration PPC':'#c96a00',
       'Journal des événements':'#2e75b6', 'Évolution en cours':'#1f3864',
-      'Oxygène d':'#6aadd4',
+      'Oxygène d':NOTE_O2,
       'Zopiclone':'#7b5ea7',
       'Salbutamol':'#b83232', 'Acétaminophène':'#b83232', 'Nitroglycérine':'#b83232', '⚠ ÉVÉNEMENT URGENT':'#b83232',
       'PSG précédant':'#5c6f7a',
@@ -2623,8 +2627,10 @@ function formatNote(text) {
       if(raw.indexOf(sectKeys[ki])===0){sectColor=sectColors[sectKeys[ki]];break;}
     }
     if(sectColor!==null){
-      out.push(BLANK);
-      out.push('<p style="'+BASE+'font-weight:bold;color:'+sectColor+'">'+raw+'</p>');
+      var noBreak = raw.indexOf('§NOBREAK§')===0;
+      var rawClean = noBreak ? raw.substring(9) : raw;
+      if(!noBreak) out.push(BLANK);
+      out.push('<p style="'+BASE+'font-weight:bold;color:'+sectColor+'">'+rawClean+'</p>');
       continue;
     }
 
@@ -2654,9 +2660,9 @@ function formatNote(text) {
       if(mMas) {
         var isBascule = mMas[2].indexOf('Bascule DX') >= 0;
         if(isBascule) {
-          out.push('<p style="'+BASE+'color:#5c7a2a;font-weight:bold">'+mMas[1]+mMas[2]+'</p>');
+          out.push('<p style="'+BASE+'color:'+NOTE_GREEN+';font-weight:bold">'+mMas[1]+mMas[2]+'</p>');
         } else {
-          out.push('<p style="'+BASE+'"><span style="font-weight:bold;color:#5c7a2a">'+mMas[1]+'</span>'+mMas[2]+'</p>');
+          out.push('<p style="'+BASE+'"><span style="font-weight:bold;color:'+NOTE_GREEN+'">'+mMas[1]+'</span>'+mMas[2]+'</p>');
         }
       }
       else out.push('<p style="'+BASE+'">'+masRaw+'</p>');
@@ -2665,7 +2671,7 @@ function formatNote(text) {
     if(raw.indexOf('§O2§') === 0) {
       var o2Raw = raw.substring(4);
       var mO2 = o2Raw.match(/^(\d{2}:\d{2})(.*)$/);
-      if(mO2) out.push('<p style="'+BASE+'"><span style="font-weight:bold;color:#6aadd4">'+mO2[1]+'</span>'+mO2[2]+'</p>');
+      if(mO2) out.push('<p style="'+BASE+'"><span style="font-weight:bold;color:'+NOTE_O2+'">'+mO2[1]+'</span>'+mO2[2]+'</p>');
       else out.push('<p style="'+BASE+'">'+o2Raw+'</p>');
       continue;
     }
@@ -2843,11 +2849,11 @@ function genererNote(){
   }
   var note=buildNote();
   if(!note) return;
+  enterModeNote();
   document.getElementById('noteFinaleText').innerHTML=formatNote(note);
   document.getElementById('viewApercu').style.display='none';
   document.getElementById('viewIA').style.display='none';
   document.getElementById('viewFinale').style.display='flex';
-  enterModeNote();
 }
 function copyNote(){
   var div = document.getElementById('noteFinaleText');
@@ -3159,6 +3165,7 @@ function toggleDarkMode() {
   var btn = document.getElementById('btnDarkMode');
   if(btn) btn.textContent = dark ? '☀️' : '🌙';
   try { localStorage.setItem('csr_dark', dark ? '1' : '0'); } catch(e) {}
+  updatePreview();
 }
 // Restaurer préférence au chargement
 (function(){
@@ -4368,10 +4375,10 @@ async function iaGenererNote() {
       });
 
       // Afficher dans la vue IA
+      enterModeNote();
       document.getElementById('noteIAText').innerHTML = formatNote(propre);
       document.getElementById('viewFinale').style.display = 'none';
       document.getElementById('viewIA').style.display = 'flex';
-      enterModeNote();
     }
   } catch(e) {
     agentAjouterLog('\u26a0 Sonnet \u2014 ' + (e.message||'erreur inconnue'));
