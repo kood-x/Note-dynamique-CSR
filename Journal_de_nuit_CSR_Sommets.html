@@ -1459,6 +1459,8 @@ initCollapseHeaders();
     if(S.masqueChanges)  masqueChanges  = S.masqueChanges;
     if(S.o2Events)       o2Events       = S.o2Events;
     if(S.meds)           meds           = S.meds;
+    if(S.medCache)       MED_PSG_CACHE  = S.medCache;
+    if(S.agentActif !== undefined) toggleAgent(S.agentActif);
     // La clé API reste dans localStorage uniquement — jamais dans le state exporté
     if(S.memo!=null)    { var mt=document.getElementById('memoText'); if(mt) mt.value=S.memo; }
     // Restaurer UI
@@ -2884,6 +2886,8 @@ function exporterHTML(){
     etudeActive: etudeActive, chambreActive: chambreActive,
     modulesActifs: modulesActifs, events: events, paliers: paliers,
     masqueChanges: masqueChanges, o2Events: o2Events, meds: meds,
+    medCache: MED_PSG_CACHE,
+    agentActif: agentActifMode,
     memo: (document.getElementById('memoText')?document.getElementById('memoText').value:'')
   };
   var savedEl = document.getElementById('saved-state');
@@ -3167,14 +3171,7 @@ function toggleDarkMode() {
   try { localStorage.setItem('csr_dark', dark ? '1' : '0'); } catch(e) {}
   updatePreview();
 }
-// Restaurer préférence au chargement
-(function(){
-  try { if(localStorage.getItem('csr_dark')==='1') {
-    document.body.classList.add('dark');
-    var btn=document.getElementById('btnDarkMode');
-    if(btn) btn.textContent='☀️';
-  }} catch(e) {}
-})();
+// Mode jour au chargement — toujours
 
 // ─── GESTION CLÉ API ───
 function sauvegarderApiKey() {
