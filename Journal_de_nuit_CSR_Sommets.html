@@ -2806,11 +2806,8 @@ function animerBtnCopie(btn) {
 
 function copyNoteIA() {
   var el = document.getElementById('noteIAText');
-  if(!el) return;
-  var range = document.createRange(); range.selectNodeContents(el);
-  var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
-  document.execCommand('copy'); sel.removeAllRanges();
-  animerBtnCopie(event.currentTarget);
+  var btn = (event && event.currentTarget) ? event.currentTarget : null;
+  copierRiche(el, btn, '📋 Copier');
 }
 
 // ============================================================
@@ -2861,21 +2858,38 @@ function genererNote(){
   document.getElementById('viewIA').style.display='none';
   document.getElementById('viewFinale').style.display='flex';
 }
+function copierRiche(el, btn, btnDefaut){
+  if(!el) return;
+  var html = el.innerHTML;
+  var texte = el.innerText;
+  function fallback(){
+    var range = document.createRange();
+    range.selectNodeContents(el);
+    var sel = window.getSelection();
+    sel.removeAllRanges(); sel.addRange(range);
+    var ok=false; try { ok = document.execCommand('copy'); } catch(e){}
+    sel.removeAllRanges();
+    return ok;
+  }
+  function feedback(ok){
+    if(btn){ btn.textContent = ok ? '✓ Copié!' : '⚠ Ctrl+C pour copier'; setTimeout(function(){btn.textContent=btnDefaut;},2500); }
+  }
+  if(navigator.clipboard && window.ClipboardItem){
+    try {
+      var item = new ClipboardItem({
+        'text/html': new Blob([html], {type:'text/html'}),
+        'text/plain': new Blob([texte], {type:'text/plain'})
+      });
+      navigator.clipboard.write([item]).then(function(){ feedback(true); }).catch(function(){ feedback(fallback()); });
+      return;
+    } catch(e){ feedback(fallback()); return; }
+  }
+  feedback(fallback());
+}
 function copyNote(){
   var div = document.getElementById('noteFinaleText');
   var btn = document.getElementById('copyBtn');
-  div.focus();
-  var range = document.createRange();
-  range.selectNodeContents(div);
-  var sel = window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(range);
-  var ok = false;
-  try { ok = document.execCommand('copy'); } catch(e){}
-  sel.removeAllRanges();
-  div.blur();
-  btn.textContent = ok ? '✓ Copié!' : '⚠ Ctrl+C pour copier';
-  setTimeout(function(){btn.textContent='📋 Copier';},2500);
+  copierRiche(div, btn, '📋 Copier');
 }
 
 function exporterHTML(){
