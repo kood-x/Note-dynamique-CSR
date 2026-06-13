@@ -20,6 +20,7 @@ body.dark #memoText{background:#2a2600 !important;color:#ffe082 !important}
 body.dark #memoBtn{background:#6b5c00 !important}
 body.dark #btnDarkMode{background:#6b5c00 !important}
 body.dark #btnDictee{background:#6b5c00 !important}
+body.dark #btnDictee.agent-on{background:var(--purple) !important}
 body.dark #iaModal > div, body.dark #promptBaseModal > div{background:#23262f !important;border-color:#2e3340}
 body.dark #iaModal > div > div:first-child, body.dark #promptBaseModal > div > div:first-child{background:#1a1d24 !important;border-color:#2e3340}
 body.dark #promptBaseTexte{color:#dde3ec !important;background:#23262f}
@@ -168,6 +169,8 @@ select{cursor:pointer}
 .card-body{max-height:2000px;opacity:1}
 /* PLACEHOLDER atténué et disparaît au focus */
 .subtle-ph::placeholder{color:#c8d0db}
+body.dark .subtle-ph::placeholder{color:#5a6478}
+body.dark input::placeholder,body.dark textarea::placeholder{color:#5a6478}
 .subtle-ph:focus::placeholder{color:transparent}
 input:focus::placeholder{color:transparent}
 textarea:focus::placeholder{color:transparent}
@@ -903,7 +906,30 @@ textarea:focus::placeholder{color:transparent}
 
 </div><!-- /panels-row -->
 </div><!-- /app -->
-<script>
+<script>// ═══════════════════════════════════════════════════════════════
+// CONFIG SITE — seule section qui diffère entre CSR Sommets et CSL
+// ═══════════════════════════════════════════════════════════════
+var CONFIG = {
+  autosavePrefix: 'csrjn_as_',
+  cliniqueParInh: {'Renaud':'Clinique Mont-Royal','Nathalie':'Clinique Blainville'},
+  machineParInh: {'Renaud':'ResMed S11','Nathalie':'ResMed S9'},
+  ocZopi: ' (OC-LAB-008)',
+  ocMed: ' (OC-LAB-009)',
+  noteNavy: '#1f3864',
+  noteBlue: '#2e75b6',
+  noteAccentJour: '#2d7a50',
+  noteAccentNuit: '#5a9e72',
+  alertDarkBg: '#23262f',
+  alertBtnCss: 'var(--note)',
+  chambresTcco2: [],
+  consentMap: {'oui':'Consentement et questionnaire pré-examen complétés dans Juvonno'},
+  questNuitMap: {'complété':"Le questionnaire d'évaluation de la nuit a été complété.",'refus du client':"Le questionnaire d'évaluation de la nuit a été refus du client.",'non-rempli':"Le questionnaire d'évaluation de la nuit n'a pas été rempli."},
+  questNuitLabel: 'Questionnaire nuit : ',
+  promptEtablissement: 'la Clinique de Santé Respiratoire des Sommets (CSR Sommets), à Blainville/Laurentides, Québec',
+  promptChambresDoc: 'ou "Chambre 2"',
+  promptDistribDoc: 'Étude distribuée dans G3, Dropbox et notes Juvonno'
+};
+
 /* ─── ÉTAT GLOBAL ─── */
 // // ============================================================
 var etudeActive = '';
@@ -1283,18 +1309,18 @@ function renderMeds() {
     } else {
       var ck = (m.nom||'').toLowerCase().trim();
       if(MED_PSG_CACHE[ck] === 'ERROR') {
-        effetsHtml = '<span style="font-size:10px;color:var(--muted)">—</span> <button class="med-reload" onclick="event.stopPropagation();reloadMedIA(this.dataset.nom)" data-nom="' + m.nom.replace(/"/g,'&quot;') + '" title="R\u00e9essayer">\u21bb</button>';
+        effetsHtml = '<span style="font-size:10px;color:var(--muted)">—</span> <button class="med-reload" onclick="event.stopPropagation();reloadMedIA(this.dataset.nom)" data-nom="' + esc(m.nom).replace(/"/g,'&quot;') + '" title="R\u00e9essayer">\u21bb</button>';
       } else {
         var ck = (m.nom||'').toLowerCase().trim();
         if(MED_PSG_CACHE[ck] === 'ERROR') {
-          effetsHtml = '<span style="font-size:10px;color:var(--muted)">—</span> <button class="med-reload" onclick="event.stopPropagation();reloadMedIA(this.dataset.nom)" data-nom="' + m.nom.replace(/"/g,'&quot;') + '" title="Réessayer">↻</button>';
+          effetsHtml = '<span style="font-size:10px;color:var(--muted)">—</span> <button class="med-reload" onclick="event.stopPropagation();reloadMedIA(this.dataset.nom)" data-nom="' + esc(m.nom).replace(/"/g,'&quot;') + '" title="Réessayer">↻</button>';
         } else {
           effetsHtml = '<span style="font-size:10px;color:var(--border)">—</span>';
         }
       }
     }
-    var label = '<span style="font-weight:600">' + m.nom + '</span>'
-      + (m.dose ? '<span style="color:var(--muted);font-size:11px"> ' + m.dose + '</span>' : '')
+    var label = '<span style="font-weight:600">' + esc(m.nom) + '</span>'
+      + (m.dose ? '<span style="color:var(--muted);font-size:11px"> ' + esc(m.dose) + '</span>' : '')
       + (m.coucher ? '<span class="med-coucher" style="font-size:10px;margin-left:4px">✓ coucher</span>' : '');
     h += '<div class="med-item' + (m.id===editingMedId?' editing-blue':'') + '" '
       + 'draggable="true" data-med-id="' + m.id + '" '
@@ -1391,12 +1417,20 @@ function updateTabTitle() {
   if(etudeActive)   parts.push(etudeActive);
   document.title = parts.length ? parts.join(' — ') : 'Journal de nuit — CSR Sommets';
 }
-function setChambre(val, activeId, otherId) {
+function setChambre(val) {
   chambreActive = val;
-  document.getElementById(activeId).classList.add('active');
-  document.getElementById(otherId).classList.remove('active');
-  var ct=document.getElementById('chambreTopbar');
+  ['ch1','ch2','ch3','ch4','ch5','ch6'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.classList.remove('active');
+  });
+  var actifId = 'ch' + val.replace('Chambre ','');
+  var elCh = document.getElementById(actifId);
+  if(elCh) elCh.classList.add('active');
+  var ct = document.getElementById('chambreTopbar');
   if(ct){ct.textContent=val;ct.style.color='rgba(255,255,255,.85)';}
+  var hasTcco2 = CONFIG.chambresTcco2.indexOf(val) >= 0;
+  var tr = document.getElementById('tcco2Row');
+  if(tr) tr.style.display = hasTcco2 ? '' : 'none';
   updateTabTitle();
   updatePreview();
 }
@@ -1444,7 +1478,7 @@ initCal();
 initCollapseHeaders();
 
 // Restaurer depuis un fichier exporté
-(function(){
+function appliquerSavedState(){
   var el = document.getElementById('saved-state');
   if(!el || !el.textContent.trim()) return;
   try {
@@ -1465,10 +1499,11 @@ initCollapseHeaders();
     if(S.memo!=null)    { var mt=document.getElementById('memoText'); if(mt) mt.value=S.memo; }
     // Restaurer UI
     if(S.chambreActive){
-      var id=S.chambreActive==="Chambre 1"?"ch1":"ch2";
-      var other=S.chambreActive==="Chambre 1"?"ch2":"ch1";
-      var b1=document.getElementById(id); if(b1)b1.classList.add('active');
-      var b2=document.getElementById(other); if(b2)b2.classList.remove('active');
+      ['ch1','ch2','ch3','ch4','ch5','ch6'].forEach(function(id){
+        var el=document.getElementById(id); if(el) el.classList.remove('active');
+      });
+      var actifId='ch'+S.chambreActive.replace('Chambre ','');
+      var b=document.getElementById(actifId); if(b) b.classList.add('active');
       var ct=document.getElementById('chambreTopbar');
       if(ct){ct.textContent=S.chambreActive;ct.style.color='rgba(255,255,255,.85)';}
     }
@@ -1497,7 +1532,124 @@ initCollapseHeaders();
       if(b)b.textContent=allCards[i].classList.contains('collapsed')?'+':'−';
     }
   } catch(e){ console.warn('Restauration échouée:', e); }
+}
+appliquerSavedState();
+
+// ─── AUTO-SAVE LOCAL (filet de sécurité contre crash/fermeture) ───
+var AUTOSAVE_PREFIX = CONFIG.autosavePrefix;
+var AUTOSAVE_TAB = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+var AUTOSAVE_MAX_AGE = 12*60*60*1000; // 12h
+
+function autosaveContenuSignificatif(){
+  return !!( v('lightsOff') || v('dossier') || events.length || meds.length || paliers.length
+    || v('conditions') || v('commentairesEvolution') || v('commentairesFin') );
+}
+
+function autosaveCapture(){
+  var fields = {};
+  var els = document.querySelectorAll('input[id],select[id],textarea[id]');
+  for(var i=0;i<els.length;i++){
+    var e = els[i];
+    if(e.id==='saved-state' || e.id==='apiKeyInput') continue;
+    if(e.type==='checkbox' || e.type==='radio') fields[e.id] = {c:e.checked};
+    else fields[e.id] = {v:e.value};
+  }
+  var state = {
+    etudeActive: etudeActive, chambreActive: chambreActive,
+    modulesActifs: modulesActifs, events: events, paliers: paliers,
+    masqueChanges: masqueChanges, o2Events: o2Events, meds: meds,
+    medCache: MED_PSG_CACHE,
+    agentActif: agentActifMode,
+    analyseInterTexte: analyseInterTexte,
+    analyseInterCheck: (document.getElementById('analyseInterCheck') ? document.getElementById('analyseInterCheck').checked : false),
+    memo: (document.getElementById('memoText')?document.getElementById('memoText').value:'')
+  };
+  return { state: state, fields: fields, ts: Date.now(),
+    chambre: chambreActive||'', dossier: v('dossier')||'' };
+}
+
+function autosaveEcrire(){
+  try {
+    if(!autosaveContenuSignificatif()) return;
+    localStorage.setItem(AUTOSAVE_PREFIX + AUTOSAVE_TAB, JSON.stringify(autosaveCapture()));
+  } catch(e) {}
+}
+
+function autosaveRestaurer(key){
+  try {
+    var data = JSON.parse(localStorage.getItem(key));
+    if(!data) return;
+    // 1. Champs du formulaire
+    for(var id in data.fields){
+      var e = document.getElementById(id);
+      if(!e) continue;
+      if('c' in data.fields[id]) e.checked = data.fields[id].c;
+      else e.value = data.fields[id].v;
+    }
+    // 2. State JS via le loader existant
+    var ss = document.getElementById('saved-state');
+    if(ss){ ss.textContent = JSON.stringify(data.state); ss.value = JSON.stringify(data.state); }
+    appliquerSavedState();
+    // 3. Adopter la session pour continuer à sauvegarder dessus
+    AUTOSAVE_TAB = key.substring(AUTOSAVE_PREFIX.length);
+    var ban = document.getElementById('autosaveBanner');
+    if(ban) ban.remove();
+  } catch(e) { alert('Restauration impossible : ' + e.message); }
+}
+
+function autosaveSupprimer(key, rowEl){
+  try { localStorage.removeItem(key); } catch(e) {}
+  if(rowEl && rowEl.parentNode) rowEl.parentNode.removeChild(rowEl);
+  var ban = document.getElementById('autosaveBanner');
+  if(ban && !ban.querySelector('.as-row')) ban.remove();
+}
+
+(function autosaveInit(){
+  // Purge des autosaves expirés + collecte des candidats
+  var candidats = [];
+  try {
+    var aSupprimer = [];
+    for(var i=0;i<localStorage.length;i++){
+      var k = localStorage.key(i);
+      if(k.indexOf(AUTOSAVE_PREFIX)!==0) continue;
+      try {
+        var d = JSON.parse(localStorage.getItem(k));
+        if(!d || !d.ts || (Date.now()-d.ts) > AUTOSAVE_MAX_AGE) { aSupprimer.push(k); continue; }
+        candidats.push({key:k, data:d});
+      } catch(e){ aSupprimer.push(k); }
+    }
+    aSupprimer.forEach(function(k){ localStorage.removeItem(k); });
+  } catch(e){}
+
+  // Si le document chargé est un fichier exporté (saved-state non vide), il prime — pas de bannière
+  var ss = document.getElementById('saved-state');
+  var docExporte = ss && ss.textContent.trim();
+
+  if(!docExporte && candidats.length){
+    candidats.sort(function(a,b){ return b.data.ts - a.data.ts; });
+    var ban = document.createElement('div');
+    ban.id = 'autosaveBanner';
+    ban.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2000;background:var(--navy);color:white;padding:10px 16px;font-size:13px;box-shadow:0 2px 12px rgba(0,0,0,.3)';
+    var h = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><b>\ud83d\udcbe Session(s) interrompue(s) d\u00e9tect\u00e9e(s)</b><span style="cursor:pointer;font-size:18px;padding:0 6px" onclick="document.getElementById(\'autosaveBanner\').remove()">\u00d7</span></div>';
+    candidats.forEach(function(c){
+      var t = new Date(c.data.ts);
+      var hh = ('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2);
+      var desc = (c.data.chambre||'Chambre non choisie') + (c.data.dossier ? ' \u2014 Dossier '+esc(c.data.dossier) : '') + ' \u2014 sauv\u00e9 \u00e0 '+hh;
+      h += '<div class="as-row" style="display:flex;align-items:center;gap:10px;padding:4px 0">'
+        + '<span style="flex:1">'+desc+'</span>'
+        + '<button onclick="autosaveRestaurer(\''+c.key+'\')" style="background:white;color:var(--navy);border:none;border-radius:5px;padding:4px 12px;cursor:pointer;font-weight:600">Restaurer</button>'
+        + '<button onclick="autosaveSupprimer(\''+c.key+'\', this.parentNode)" style="background:transparent;color:white;border:1px solid rgba(255,255,255,.5);border-radius:5px;padding:4px 10px;cursor:pointer">Supprimer</button>'
+        + '</div>';
+    });
+    ban.innerHTML = h;
+    document.body.appendChild(ban);
+  }
+
+  // Démarrer l'auto-save périodique + snapshot final à la fermeture
+  setInterval(autosaveEcrire, 60000);
+  window.addEventListener('beforeunload', autosaveEcrire);
 })();
+
 
 
 
@@ -1736,7 +1888,7 @@ function renderPaliers() {
     items += '<div class="chron-item palier' + editCls + '"' + editStyle + ' onclick="editPalier(' + p.id + ')" title="Cliquer pour modifier">'
       + '<div class="chron-time">' + p.time + '</div>'
       + '<div class="chron-badge badge-pression">' + p.presStr + '</div>'
-      + '<div class="chron-desc">' + p.motif + (p.comment ? ' — ' + p.comment : '') + (p.pos&&posLabel[p.pos] ? ' — ' + posLabel[p.pos] : '') + '</div>'
+      + '<div class="chron-desc">' + esc(p.motif) + (p.comment ? ' — ' + esc(p.comment) : '') + (p.pos&&posLabel[p.pos] ? ' — ' + posLabel[p.pos] : '') + '</div>'
       + '<button class="chron-del" onclick="event.stopPropagation();deletePalier(' + p.id + ')">×</button>'
       + '</div>';
   }
@@ -1876,7 +2028,7 @@ function renderMasqueChanges() {
     var editStyleM = isEditing ? ' style="background:#e8f5e9;outline:2px solid #2d7a4f;"' : '';
     items+='<div class="chron-item masque'+editClsM+'"'+editStyleM+' onclick="editMasque('+m.id+')" title="Cliquer pour modifier">'
       +'<div class="chron-time">'+m.time+'</div>'
-      +'<div class="chron-badge badge-masque">'+m.desc+'</div>'
+      +'<div class="chron-badge badge-masque">'+esc(m.desc)+'</div>'
       +'<div class="chron-desc">'+(m.raison||'—')+'</div>'
       +'<button class="chron-del" onclick="event.stopPropagation();deleteMasqueChange('+m.id+')">×</button>'
       +'</div>';
@@ -2058,8 +2210,8 @@ function renderEvents() {
     var editStyleE = isEditing ? ' style="background:#e3f2fd;outline:2px solid #2e75b6;"' : '';
     items+='<div class="chron-item general'+editClsE+'"'+editStyleE+' onclick="editEvent('+e.id+')" title="Cliquer pour modifier">'
       +'<div class="chron-time">'+e.time+'</div>'
-      +'<div class="chron-badge badge-gen">'+e.cat+'</div>'
-      +'<div class="chron-desc">'+e.desc+'</div>'
+      +'<div class="chron-badge badge-gen">'+esc(e.cat)+'</div>'
+      +'<div class="chron-desc">'+esc(e.desc)+'</div>'
       +'<button class="chron-del" onclick="event.stopPropagation();deleteEvent('+e.id+')">×</button>'
       +'</div>';
   }
@@ -2076,6 +2228,7 @@ renderEvents();
 // ============================================================
 function v(id){var e=document.getElementById(id);return e?e.value.trim():'';}
 function vc(id){var e=document.getElementById(id);return e?e.checked:false;}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 var positionActive = '';
 var posMap={dorsal:'qDorsal',latD:'qLatD',latG:'qLatG',ventral:'qVentral'};
@@ -2147,9 +2300,8 @@ function buildSection_entete(chambre, date, dossier, inh, etude) {
   if(dossier) entete += ' — Dossier : ' + dossier;
   L.push(entete);
   var clinique = '';
-  if(inh.indexOf('Renaud')  !== -1) clinique = 'Clinique Mont-Royal';
-  else if(inh.indexOf('Nathalie') !== -1) clinique = 'Clinique Blainville';
-  if(inh) L.push('Inhalothérapeute : ' + inh + (clinique ? ' — ' + clinique : ''));
+  for(var ck in CONFIG.cliniqueParInh){ if(inh.indexOf(ck) !== -1){ clinique = CONFIG.cliniqueParInh[ck]; break; } }
+  if(inh) L.push('Collecte de données effectuée par : ' + inh + (clinique ? ' — ' + clinique : ''));
   L.push('');
   return L;
 }
@@ -2194,7 +2346,7 @@ async function genererAnalyseInter() {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 400,
+        max_tokens: 1200,
         system: prompt_inter,
         messages: [{ role: 'user', content: 'Liste des médicaments du patient :\n' + listeMeds }]
       })
@@ -2220,7 +2372,7 @@ async function genererAnalyseInter() {
 function buildSection_accueil() {
   var L = [], acc = [], sv = [];
   if(v('doubleId') === 'oui') acc.push('Identification confirmée (nom + DDN)');
-  if(v('consentement') === 'oui') acc.push('Consentement et questionnaire pré-examen complétés dans Juvonno');
+  for(var csk in CONFIG.consentMap){ if(v('consentement') === csk) acc.push(CONFIG.consentMap[csk]); }
   if(v('pa'))       sv.push('PA ' + v('pa') + ' mmHg');
   if(v('fc'))        sv.push('FC ' + v('fc') + ' /min');
   if(v('spo2eveil')) sv.push('SpO₂ ' + v('spo2eveil') + '%');
@@ -2244,7 +2396,7 @@ function buildSection_accueil() {
     if(hab.length) L.push('Médication habituelle : ' + hab.join(', ') + '.');
     if(cou.length) L.push('Pris au coucher ce soir : ' + cou.join(', ') + '.');
   }
-  if(v('conditions')) L.push('Informations complémentaires : ' + v('conditions') + '.');
+  if(v('conditions')) L.push('Informations complémentaires : ' + v('conditions'));
   L.push('');
   return L;
 }
@@ -2272,6 +2424,7 @@ function buildSection_enregistrement() {
   if(v('biocal'))         enr2.push('biocalibration ' + v('biocal'));
   if(v('impedances'))     enr2.push('impédances ' + v('impedances'));
   if(v('montageSpecial')) enr2.push('montage spécial : ' + v('montageSpecial'));
+  if(v('tcco2Site')) enr2.push('monitoring TcCO\u2082 install\u00e9 (' + v('tcco2Site') + ')' + (v('tcco2Depart') ? ', valeur de d\u00e9part : ' + v('tcco2Depart') + ' mmHg' : ''));
   if(v('qualite'))        enr2.push('qualité technique ' + v('qualite'));
   if(v('artefacts'))      enr2.push('artefact : ' + v('artefacts'));
   if(modulesActifs['o2'] && v('o2PsiDebut') && v('o2PsiFin')) enr2.push('cylindre O₂ : ' + v('o2PsiDebut') + ' → ' + v('o2PsiFin') + ' psi');
@@ -2291,7 +2444,7 @@ function buildSection_appareillage() {
   L.push('Appareillage initial');
   // Machine selon l'inhalothérapeute
   var inh = v('inh') || '';
-  var machine = inh.indexOf('Renaud') >= 0 ? 'ResMed S11' : inh.indexOf('Nathalie') >= 0 ? 'ResMed S9' : '';
+  var machine = ''; for(var mk in CONFIG.machineParInh){ if(inh.indexOf(mk) >= 0){ machine = CONFIG.machineParInh[mk]; break; } }
   if(machine) L.push('Appareil : ' + machine + '.');
   if(presD) L.push('Pression départ : ' + presD + '.');
   if(mt) L.push('Masque : ' + mt + (mm ? ' ' + mm : '') + (mta ? ' taille ' + mta : '') + '.');
@@ -2313,7 +2466,7 @@ function buildSection_nuitPartagee() {
   var snMt = v('snMasqueType'), snMm = v('snMasqueModele'), snMta = v('snMasqueTaille');
   // Machine selon l'inhalothérapeute
   var inh = v('inh') || '';
-  var machine = inh.indexOf('Renaud') >= 0 ? 'ResMed S11' : inh.indexOf('Nathalie') >= 0 ? 'ResMed S9' : '';
+  var machine = ''; for(var mk in CONFIG.machineParInh){ if(inh.indexOf(mk) >= 0){ machine = CONFIG.machineParInh[mk]; break; } }
   if(machine) L.push('Appareil TX : ' + machine + '.');
   if(snPresD) L.push('Pression départ TX : ' + snPresD + '.');
   if(snMt) L.push('Masque départ TX : ' + snMt + (snMm ? ' ' + snMm : '') + (snMta ? ' taille ' + snMta : '') + '.');
@@ -2410,7 +2563,7 @@ function buildSection_zopiclone() {
   if(!modulesActifs['zopiclone']) return [];
   if(!v('zopiHeure')) return [];
   var L = [];
-  L.push('Zopiclone (OC-LAB-008)');
+  L.push('Zopiclone' + CONFIG.ocZopi);
   if(v('zopiHeure') && v('zopiDose')) {
     var zopiLine = v('zopiDose') + ' administré à ' + v('zopiHeure');
     var loff = v('lightsOff');
@@ -2442,7 +2595,7 @@ function buildSection_urgence() {
   if(!modulesActifs['urgence-med']) return [];
   var L = [];
   if(v('salbuHeure')) {
-    L.push('Salbutamol (OC-LAB-009)');
+    L.push('Salbutamol' + CONFIG.ocMed);
     if(v('salbuHeure') && v('salbuDose')) L.push(v('salbuDose') + ' administrées à ' + v('salbuHeure') + (v('salbuIndication') ? ' — Indication : ' + v('salbuIndication') : '') + '.');
     var rv = [];
     if(v('salbuFR'))   rv.push('FR ' + v('salbuFR'));
@@ -2453,7 +2606,7 @@ function buildSection_urgence() {
     L.push('');
   }
   if(v('tylenolHeure')) {
-    L.push('Acétaminophène (OC-LAB-009)');
+    L.push('Acétaminophène' + CONFIG.ocMed);
     if(v('tylenolHeure') || v('tylenolDose') || v('tylenolIndication')) {
       var tLine2=[];
       if(v('tylenolIndication')) tLine2.push('Indication : '+v('tylenolIndication'));
@@ -2464,7 +2617,7 @@ function buildSection_urgence() {
     L.push('');
   }
   if(v('nitroHeure1')) {
-    L.push('Nitroglycérine SL (OC-LAB-009)');
+    L.push('Nitroglycérine SL' + CONFIG.ocMed);
     var svAvant = [];
     if(v('nitroPAsyst')) svAvant.push('PA ' + v('nitroPAsyst') + ' mmHg');
     if(v('nitroFC'))     svAvant.push('FC ' + v('nitroFC') + ' /min');
@@ -2511,7 +2664,7 @@ function buildSection_finNuit(inh) {
   // Construire le paragraphe final dynamiquement selon les selects
   var parties = [];
   var q = v('questNuit');
-  if(q === 'complété') parties.push('Le questionnaire d\'évaluation de la nuit a été complété.');
+  if(q && CONFIG.questNuitMap[q]) parties.push(CONFIG.questNuitMap[q]);
   else if(q === 'refus du client') parties.push('Le questionnaire d\'évaluation de la nuit a été refus du client.');
   else if(q === 'non-rempli') parties.push('Le questionnaire d\'évaluation de la nuit n\'a pas été rempli.');
   var r = v('regleScoring');
@@ -2552,11 +2705,11 @@ function buildNote() {
 function formatNote(text) {
   var BASE_NO_SIZE = 'font-family:Calibri,sans-serif;line-height:1.0;margin:0;margin-top:0;margin-bottom:0;padding:0;mso-line-height-rule:exactly;mso-margin-top-alt:0cm;mso-margin-bottom-alt:0cm;';
   var BASE = BASE_NO_SIZE + 'font-size:10pt;';
-  var NAVY = '#1f3864';
+  var NAVY = CONFIG.noteNavy;
   var isDark = document.body.classList.contains('dark');
-  var NOTE_GREEN = isDark ? '#5a9e72' : '#2d7a50';
+  var NOTE_ACCENT = isDark ? CONFIG.noteAccentNuit : CONFIG.noteAccentJour;
   var NOTE_O2 = isDark ? '#4a8aab' : '#6aadd4';
-  var BLUE = '#2e75b6';
+  var BLUE = CONFIG.noteBlue;
   var BLANK = '<div style="font-family:Calibri,sans-serif;font-size:10pt;line-height:1.0;margin:0;margin-top:0;margin-bottom:0;padding:0;mso-line-height-rule:exactly;mso-margin-top-alt:0cm;mso-margin-bottom-alt:0cm;height:1em">&nbsp;</div>';
 
   var lines = text.split('\n');
@@ -2568,6 +2721,7 @@ function formatNote(text) {
     if(t === ''){
       if(!lastWasBlank){ cleaned.push(''); lastWasBlank=true; }
     } else {
+      t = t.replace(/</g,'&lt;').replace(/>/g,'&gt;');
       cleaned.push(t); lastWasBlank=false;
     }
   }
@@ -2582,7 +2736,8 @@ function formatNote(text) {
       var next = '';
       for(var j=i+1;j<cleaned.length;j++){ if(cleaned[j].trim()!==''){next=cleaned[j].trim();break;} }
       var nextIsTitle = /^OBSERVATIONS CLINIQUES/.test(next)
-        || /^── .+ ──$/.test(next)        || /^(Accueil &|Enregistrement$|Appareillage initial|Nuit partagée|Titration PPC|Journal des événements|Évolution en cours|Oxygène d|Zopiclone$|Salbutamol|Acétaminophène|Nitroglycérine|PSG précédant|Fin de nuit$|⚠ ÉVÉNEMENT URGENT)/.test(next);
+        || /^── .+ ──$/.test(next)        || /^(Accueil & évaluation initiale|Enregistrement|Appareillage initial|Nuit partagée — Bascule DX → TX|Titration PPC|Journal des événements|Oxygène d|Zopiclone( \(OC-LAB-008\))?|Salbutamol( \(OC-LAB-009\))?|Acétaminophène( \(OC-LAB-009\))?|Nitroglycérine SL( \(OC-LAB-009\))?|PSG précédant TILE|Fin de nuit|⚠ ÉVÉNEMENT URGENT)$/.test(next)
+        || /^(Oxygène d|Interactions médicamenteuses)/.test(next);
       if(!nextIsTitle) pushBlank();
       continue;
     }
@@ -2604,7 +2759,7 @@ function formatNote(text) {
       // Ajouter un espace après seulement si la ligne suivante n'est pas un titre de section
       var nextAfter = '';
       for(var jj=i+1;jj<cleaned.length;jj++){if(cleaned[jj].trim()!==''){nextAfter=cleaned[jj].trim();break;}}
-      var nextIsSect = /^── .+ ──$/.test(nextAfter) || /^(Journal des événements|Accueil &|Enregistrement$|Appareillage|Nuit partagée|Titration|Zopiclone|PSG précédant|Fin de nuit|⚠|Note consignée|OBSERVATIONS)/.test(nextAfter) || nextAfter==='' ;
+      var nextIsSect = /^── .+ ──$/.test(nextAfter) || /^(Journal des événements|Accueil & évaluation initiale|Enregistrement|Appareillage initial|Nuit partagée — Bascule DX → TX|Titration PPC|Zopiclone( \(OC-LAB-008\))?|PSG précédant TILE|Fin de nuit|⚠|Note consignée|OBSERVATIONS)$/.test(nextAfter) || /^(Oxygène d|Interactions médicamenteuses)/.test(nextAfter) || nextAfter==='' ;
       if(isComm || (!nextIsSect)) pushBlank();
       continue;
     }
@@ -2616,23 +2771,27 @@ function formatNote(text) {
     }
 
     // Titres de section — couleur selon le module
-    var sectColors = { 'Accueil & évaluation initiale':'#2e75b6', 'Enregistrement':'#2e75b6', 'Appareillage initial':'#2e75b6',
-      'Nuit partagée':NOTE_GREEN,
-      'Interactions médicamenteuses':'#2e75b6',
+    var sectColors = { 'Accueil & évaluation initiale':BLUE, 'Enregistrement':BLUE, 'Appareillage initial':BLUE,
+      'Nuit partagée — Bascule DX → TX':NOTE_ACCENT,
+      'Interactions médicamenteuses':BLUE,
       'Titration PPC':'#c96a00',
-      'Journal des événements':'#2e75b6', 'Évolution en cours':'#1f3864',
-      'Oxygène d':NOTE_O2,
-      'Zopiclone':'#7b5ea7',
-      'Salbutamol':'#b83232', 'Acétaminophène':'#b83232', 'Nitroglycérine':'#b83232', '⚠ ÉVÉNEMENT URGENT':'#b83232',
-      'PSG précédant':'#5c6f7a',
-      'Fin de nuit':'#1f3864'
+      'Journal des événements':BLUE, 'Évolution en cours':NAVY,
+      'Zopiclone (OC-LAB-008)':'#7b5ea7', 'Zopiclone':'#7b5ea7',
+      'Salbutamol (OC-LAB-009)':'#b83232', 'Salbutamol':'#b83232', 'Acétaminophène (OC-LAB-009)':'#b83232', 'Acétaminophène':'#b83232', 'Nitroglycérine SL (OC-LAB-009)':'#b83232', 'Nitroglycérine SL':'#b83232', '⚠ ÉVÉNEMENT URGENT':'#b83232',
+      'PSG précédant TILE — vérifications':'#5c6f7a',
+      'Fin de nuit':NAVY
     };
+    // Préfixes pour titres à longueur variable (oxygène, interactions IA)
+    var sectPrefixes = { 'Oxygène d':NOTE_O2, 'Interactions médicamenteuses':BLUE };
     var noBreak = raw.indexOf('§NOBREAK§')===0;
     var rawForSect = noBreak ? raw.substring(9) : raw;
     var sectColor = null;
-    var sectKeys = Object.keys(sectColors);
-    for(var ki=0;ki<sectKeys.length;ki++){
-      if(rawForSect.indexOf(sectKeys[ki])===0){sectColor=sectColors[sectKeys[ki]];break;}
+    // 1. Match exact (titre seul sur sa ligne)
+    if(sectColors[rawForSect] !== undefined) sectColor = sectColors[rawForSect];
+    // 2. Sinon, préfixes pour les titres à suffixe variable
+    if(sectColor===null){
+      var pk = Object.keys(sectPrefixes);
+      for(var pi=0;pi<pk.length;pi++){ if(rawForSect.indexOf(pk[pi])===0){sectColor=sectPrefixes[pk[pi]];break;} }
     }
     if(sectColor!==null){
       if(!noBreak) pushBlank();
@@ -2647,7 +2806,7 @@ function formatNote(text) {
       var mEvt = evtRaw.match(/^(\d{2}:\d{2})(.*)$/);
       if(mEvt) {
         var isLights = mEvt[2].indexOf('[Lights-') >= 0;
-        var evtColor = isLights ? NAVY : '#2e75b6';
+        var evtColor = isLights ? NAVY : BLUE;
         out.push('<p style="'+BASE+'"><span style="font-weight:bold;color:'+evtColor+'">'+mEvt[1]+'</span>'+mEvt[2]+'</p>');
       }
       else out.push('<p style="'+BASE+'">'+evtRaw+'</p>');
@@ -2666,9 +2825,9 @@ function formatNote(text) {
       if(mMas) {
         var isBascule = mMas[2].indexOf('Bascule DX') >= 0;
         if(isBascule) {
-          out.push('<p style="'+BASE+'color:'+NOTE_GREEN+';font-weight:bold">'+mMas[1]+mMas[2]+'</p>');
+          out.push('<p style="'+BASE+'color:'+NOTE_ACCENT+';font-weight:bold">'+mMas[1]+mMas[2]+'</p>');
         } else {
-          out.push('<p style="'+BASE+'"><span style="font-weight:bold;color:'+NOTE_GREEN+'">'+mMas[1]+'</span>'+mMas[2]+'</p>');
+          out.push('<p style="'+BASE+'"><span style="font-weight:bold;color:'+NOTE_ACCENT+'">'+mMas[1]+'</span>'+mMas[2]+'</p>');
         }
       }
       else out.push('<p style="'+BASE+'">'+masRaw+'</p>');
@@ -2771,6 +2930,7 @@ function initCollapseHeaders() {
 
 // ============================================================
 // VUE FINALE / APERÇU
+var noteFinaleSnapshot = '';
 // ─── MODE NOTE — forcer mode jour ───
 function enterModeNote() {
   if(document.body.classList.contains('dark')) toggleDarkMode();
@@ -2836,14 +2996,14 @@ function genererNote(){
     var overlay=document.createElement('div');
     overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center';
     var box=document.createElement('div');
-    box.style.cssText='background:'+(isDark?'#23262f':'white')+';border-radius:10px;padding:28px 32px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);font-family:Segoe UI,sans-serif';
+    box.style.cssText='background:'+(isDark?CONFIG.alertDarkBg:'white')+';border-radius:10px;padding:28px 32px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);font-family:Segoe UI,sans-serif';
     var liste=manquants.map(function(m){return '<li style="margin:4px 0">'+m+'</li>';}).join('');
     var textColor=isDark?'#dde3ec':'#1a2333';
     box.innerHTML='<div style="font-size:15px;font-weight:700;color:#e05c5c;margin-bottom:12px">⚠ Champs obligatoires manquants</div>'
       +'<div style="font-size:13px;color:'+textColor+';margin-bottom:14px">Les champs suivants sont requis pour éditer la note :</div>'
       +'<ul style="font-size:13px;color:'+textColor+';padding-left:20px;margin-bottom:20px;line-height:1.8">'+liste+'</ul>'
       +'<div style="display:flex;justify-content:flex-end">'
-      +'<button id="alertOk" style="padding:8px 22px;border-radius:5px;border:none;background:var(--note);color:white;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Compris</button>'
+      +'<button id="alertOk" style="padding:8px 22px;border-radius:5px;border:none;background:'+CONFIG.alertBtnCss+';color:white;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Compris</button>'
       +'</div>';
     overlay.appendChild(box);
     document.body.appendChild(overlay);
@@ -2852,8 +3012,13 @@ function genererNote(){
   }
   var note=buildNote();
   if(!note) return;
+  var _nf = document.getElementById('noteFinaleText');
+  if(_nf && noteFinaleSnapshot && _nf.innerHTML !== noteFinaleSnapshot) {
+    if(!confirm('La note affich\u00e9e contient des modifications manuelles. R\u00e9g\u00e9n\u00e9rer va les \u00e9craser. Continuer ?')) return;
+  }
   enterModeNote();
   document.getElementById('noteFinaleText').innerHTML=formatNote(note);
+  noteFinaleSnapshot = document.getElementById('noteFinaleText').innerHTML;
   document.getElementById('viewApercu').style.display='none';
   document.getElementById('viewIA').style.display='none';
   document.getElementById('viewFinale').style.display='flex';
@@ -3034,9 +3199,15 @@ function toggleDicteeAgent() {
 
 // ─── RACCOURCIS CLAVIER F1-F6 ───
 var MODULE_CARDS = ['card-01','card-02','card-03','card-04','card-05','card-06'];
+function fermerSectionsCond(saufId) {
+  document.querySelectorAll('.card.cond').forEach(function(c){
+    if(saufId && c.id === saufId) return;
+    c.classList.add('collapsed');
+    var b = c.querySelector('.collapse-btn'); if(b) b.textContent = '+';
+  });
+}
 function ouvrirModuleF(num) {
-  var titCard = document.getElementById('section-titration');
-  if(titCard) { titCard.classList.add('collapsed'); var bt=titCard.querySelector('.collapse-btn'); if(bt) bt.textContent='+'; }
+  fermerSectionsCond();
   MODULE_CARDS.forEach(function(id, idx) {
     var card = document.getElementById(id);
     if(!card) return;
@@ -3080,6 +3251,7 @@ document.addEventListener('keydown', function(e) {
   }
   if(e.keyCode === 118) {
     e.preventDefault();
+    fermerSectionsCond('section-titration');
     var titCard = document.getElementById('section-titration');
     if(titCard) {
       MODULE_CARDS.forEach(function(id){
@@ -3398,6 +3570,7 @@ function toggleAgent(actif) {
   if(btn) {
     btn.title = actif ? "Parler à l'agent (dictée)" : "Dicter dans le champ actif";
     btn.style.background = actif ? 'var(--purple)' : 'var(--navy)';
+    if(actif) btn.classList.add('agent-on'); else btn.classList.remove('agent-on');
   }
   if(!actif && dicteeCourante) { dicteeCourante.stop(); }
 }
@@ -3452,7 +3625,7 @@ var AGENT_PROMPT_SYSTEME = `Tu es un assistant clinique PSG pour CSR Sommets. Tu
 CHAMPS DISPONIBLES ET ACTIONS :
 
 ── MODULE 1 : IDENTIFICATION ──
-{"action":"setChambre","valeur":"Chambre 1"} ou "Chambre 2"
+{"action":"setChambre","valeur":"Chambre 1"} ${CONFIG.promptChambresDoc}
 {"action":"setInh","valeur":"Renaud Beausoleil"} ou "Nathalie Raymond"
 {"action":"setSexe","valeur":"M"}  // ou "F" — genre du patient
 {"action":"setDossier","valeur":"12345"}
@@ -3544,7 +3717,7 @@ MODULES ADDITIONNELS :
 {"action":"setLightsOn","heure":"06:00"}
 {"action":"setQuestNuit","valeur":"refus du client"} ou "complété"
 {"action":"setRegleScoring","valeur":"Règles de scoring AASM v3 appliquées (détails consignés au rapport)"} ou ""
-{"action":"setEtudeDistrib","valeur":"Étude distribuée dans G3, Dropbox et notes Juvonno"} ou ""
+{"action":"setEtudeDistrib","valeur":"${CONFIG.promptDistribDoc}"} ou ""
 {"action":"setCommentairesFin","valeur":"texte"}
 
 ── MODULE TILE LENDEMAIN ──
@@ -3878,9 +4051,10 @@ function agentAppliquerAction(a) {
       if(setField('consentement', a.valeur)) { label = 'Consentement : ' + a.valeur; ok = true; }
       break;
     case 'setChambre':
-      var el = a.valeur === 'Chambre 1' ? document.getElementById('ch1') : document.getElementById('ch2');
+      var chMap = {'Chambre 1':'ch1','Chambre 2':'ch2','Chambre 3':'ch3','Chambre 4':'ch4','Chambre 5':'ch5','Chambre 6':'ch6'};
+      var el = document.getElementById(chMap[a.valeur] || 'ch1');
       if(el) { var oldChambre = chambreActive; el.click(); label = a.valeur;
-        agentSauvegarderUndo(label, function(){ var oldEl = oldChambre==='Chambre 1'?document.getElementById('ch1'):document.getElementById('ch2'); if(oldEl)oldEl.click(); }); ok = true; }
+        agentSauvegarderUndo(label, function(){ var oldEl = document.getElementById(chMap[oldChambre]); if(oldEl)oldEl.click(); }); ok = true; }
       break;
     case 'setNom':
       if(setField('nomPatient', a.valeur)) { label = 'Patient : ' + a.valeur; ok = true; }
@@ -3910,9 +4084,11 @@ function agentAppliquerAction(a) {
       var btnEtude = document.getElementById('etude-' + a.valeur);
       if(btnEtude) { btnEtude.click(); label = a.valeur; ok = true; }
       break;
-    case 'setConditions':
-      if(setField('conditions', a.valeur)) { label = 'Conditions : ' + a.valeur.substring(0,40); ok = true; }
-      break;
+    case 'setConditions': {
+      var _oldC = (document.getElementById('conditions')||{}).value || '';
+      if(appendField('conditions', a.valeur)) { label = 'Conditions : ' + a.valeur.substring(0,40); ok = true;
+        agentSauvegarderUndo(label, function(){ setField('conditions', _oldC); }); }
+      break; }
     case 'addMed': {
       var prevMeds = JSON.parse(JSON.stringify(meds));
       meds.push({id:Date.now(), nom:a.nom||'', dose:a.dose||'', coucher:!!a.coucher});
@@ -4002,11 +4178,13 @@ function agentAppliquerAction(a) {
     case 'setLightsOn':
       if(setField('lightsOn', a.heure)) { label = 'Lights-on ' + a.heure; ok = true; }
       break;
-    case 'setCommentairesEvolution':
-      if(setField('commentairesEvolution', a.valeur)) { label = 'Commentaires évolution'; ok = true; }
-      break;
+    case 'setCommentairesEvolution': {
+      var _oldCE = (document.getElementById('commentairesEvolution')||{}).value || '';
+      if(appendField('commentairesEvolution', a.valeur)) { label = 'Commentaires évolution'; ok = true;
+        agentSauvegarderUndo(label, function(){ setField('commentairesEvolution', _oldCE); }); }
+      break; }
     case 'setQuestNuit':
-      if(setField('questNuit', a.valeur)) { label = 'Questionnaire nuit : ' + a.valeur; ok = true; }
+      if(setField('questNuit', a.valeur)) { label = CONFIG.questNuitLabel + a.valeur; ok = true; }
       break;
     case 'setRegleScoring':
       if(setField('regleScoring', a.valeur)) { label = 'Règles scoring : ' + (a.valeur ? 'AASM v3' : 'non applicable'); ok = true; }
@@ -4014,9 +4192,11 @@ function agentAppliquerAction(a) {
     case 'setEtudeDistrib':
       if(setField('etudeDistrib', a.valeur)) { label = 'Étude distribuée : ' + (a.valeur ? 'oui' : 'non'); ok = true; }
       break;
-    case 'setCommentairesFin':
-      if(setField('commentairesFin', a.valeur)) { label = 'Commentaires révision'; ok = true; }
-      break;
+    case 'setCommentairesFin': {
+      var _oldCF = (document.getElementById('commentairesFin')||{}).value || '';
+      if(appendField('commentairesFin', a.valeur)) { label = 'Commentaires révision'; ok = true;
+        agentSauvegarderUndo(label, function(){ setField('commentairesFin', _oldCF); }); }
+      break; }
     case 'editerNote':
       genererNote(); label = 'Vue : Éditer la note'; ok = true;
       break;
@@ -4145,6 +4325,23 @@ function setField(id, val) {
   return true;
 }
 
+function appendField(id, val) {
+  var el = document.getElementById(id);
+  if(!el) return false;
+  var ajout = (val||'').trim();
+  if(!ajout) return false;
+  var base = el.value.trim();
+  if(base) {
+    var sep = /[.!?]$/.test(base) ? ' ' : '. ';
+    el.value = base + sep + ajout;
+  } else {
+    el.value = ajout;
+  }
+  el.dispatchEvent(new Event('input'));
+  el.dispatchEvent(new Event('change'));
+  return true;
+}
+
 function setFieldWithUndo(id, val, label) {
   var el = document.getElementById(id);
   if(!el) return false;
@@ -4241,7 +4438,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 var IA_MODEL   = 'claude-sonnet-4-6';
 
-var IA_PROMPT_SYSTEME = `Tu es un inhalothérapeute thérapeute respiratoire RPSGT travaillant au Laboratoire du sommeil de la Clinique de Santé Respiratoire des Sommets (CSR Sommets), à Blainville/Laurentides, Québec. Tu rédiges des notes cliniques au dossier à partir des données brutes consignées durant une étude du sommeil. Le sexe du patient est indiqué en fin de note (Sexe : M ou F). Si F, utiliser le féminin pour tous les accords (la patiente, elle, installée, présentée, etc.). Si M, utiliser le masculin.
+var IA_PROMPT_SYSTEME = `Tu es un inhalothérapeute thérapeute respiratoire RPSGT travaillant au Laboratoire du sommeil de ${CONFIG.promptEtablissement}. Tu rédiges des notes cliniques au dossier à partir des données brutes consignées durant une étude du sommeil. Le sexe du patient est indiqué en fin de note (Sexe : M ou F). Si F, utiliser le féminin pour tous les accords (la patiente, elle, installée, présentée, etc.). Si M, utiliser le masculin.
 
 LANGUE ET STYLE
 Français clinique québécois, professionnel et concis. Troisième personne pour le client, première personne du pluriel pour les actions cliniques. Phrases complètes, ton neutre et factuel. Prose continue — pas de bullet points. Ne jamais créer de nouvelles sections absentes de la note brute.
@@ -4318,7 +4515,18 @@ function iaSetLoading(on, texte) {
 
 function iaGetNoteTexte() {
   var note = buildNote();
-  return note || '';
+  if(!note) return '';
+  // Conformité : retirer toute donnée identifiante avant envoi à l'IA
+  var lignes = note.split('\n');
+  var filtrees = lignes.filter(function(l){
+    var t = l.trim();
+    if(/— Dossier :/.test(t)) return false;
+    if(/^Collecte de données effectuée par/.test(t)) return false;
+    if(/^Note consignée par/.test(t)) return false;
+    if(/^(PSG|TILE|MSLT|TME|Polysomnographie|Étude|—).*—.*(Chambre|chambre|\d{4}-\d{2}-\d{2}|\d{1,2} \w+ \d{4})/.test(t)) return false;
+    return true;
+  });
+  return filtrees.join('\n');
 }
 
 async function iaAppelAPI(userMessage, maxTokens) {
@@ -4358,6 +4566,10 @@ async function iaGenererNote() {
   if(!notebrute || notebrute.trim().length < 50) {
     alert("La note doit contenir du contenu avant d\u2019\u00eatre enrichie.");
     return;
+  }
+  var _nfIA = document.getElementById('noteFinaleText');
+  if(_nfIA && noteFinaleSnapshot && _nfIA.innerHTML !== noteFinaleSnapshot) {
+    if(!confirm('La note affich\u00e9e contient des modifications manuelles qui ne seront PAS transmises \u00e0 l\u2019IA (elle travaille sur la note brute). Vos modifications resteront visibles dans la vue \u00ab Note g\u00e9n\u00e9r\u00e9e \u00bb. Continuer ?')) return;
   }
   iaSetLoading(true, "L'IA enrichit la note\u2026");
   try {
